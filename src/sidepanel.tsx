@@ -37,6 +37,13 @@ campaignManager.setSendFunction(async (contact: string, message: string) => {
 
 type Tab = "progress" | "campaign" | "logs";
 
+interface WppStatus {
+  ready: boolean;
+  authenticated: boolean;
+  injected: boolean;
+  error?: string;
+}
+
 interface SidePanelState {
   activeTab: Tab;
   campaign: Campaign | null;
@@ -45,6 +52,7 @@ interface SidePanelState {
   isPaused: boolean;
   whatsappConnected: boolean;
   checkingWhatsApp: boolean;
+  wppStatus: WppStatus | null;
 }
 
 class SidePanel extends Component<unknown, SidePanelState> {
@@ -60,19 +68,32 @@ class SidePanel extends Component<unknown, SidePanelState> {
       isPaused: false,
       whatsappConnected: false,
       checkingWhatsApp: true,
+      wppStatus: null,
     };
   }
 
   override componentDidMount() {
     void this.checkWhatsApp();
-    this.checkInterval = window.setInterval(
-      () => void this.checkWhatsApp(),
-      3000,
-    );
+    this.checkInterval = window.setInterval(() => {
+      void this.checkWhatsApp();
+      void this.checkWppStatus();
+    }, 3000);
   }
 
   override componentWillUnmount() {
     clearInterval(this.checkInterval);
+  }
+
+  private async checkWppStatus() {
+    try {
+      const status = await Promise.race([
+        messageManager.sendMessage(ChromeMessageTypes.WPP_STATUS, undefined),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
+      ]);
+      if (status) this.setState({ wppStatus: status });
+    } catch {
+      // ignore
+    }
   }
 
   private async checkWhatsApp() {
@@ -149,6 +170,7 @@ class SidePanel extends Component<unknown, SidePanelState> {
       isPaused,
       whatsappConnected,
       checkingWhatsApp,
+      wppStatus,
     } = this.state;
 
     const tabs: [Tab, string][] = [
@@ -216,6 +238,35 @@ class SidePanel extends Component<unknown, SidePanelState> {
             </div>
           ) : (
             <>
+          {/* WPP Status Banner */}
+          {wppStatus && !wppStatus.ready && (
+            <div className="mb-2 flex items-start gap-2 p-2.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300">
+              <span className="text-base leading-none shrink-0 mt-0.5">&#x1F6A8;</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs font-medium">WPP não inicializou</span>
+                <span className="text-[10px] leading-snug opacity-90">
+                  {wppStatus.error || (
+                    !wppStatus.injected
+                      ? "injectLoader() falhou. Recarregue o WhatsApp Web."
+                      : !wppStatus.authenticated
+                        ? "WhatsApp não autenticado. Faça login no WhatsApp Web."
+                        : "Aguardando inicialização... se persistir, recarregue a página."
+                  )}
+                </span>
+                <span className="text-[9px] opacity-60 font-mono">
+                  injected: {String(wppStatus.injected)} | ready: {String(wppStatus.ready)} | auth: {String(wppStatus.authenticated)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {wppStatus?.ready && !wppStatus.authenticated && (
+            <div className="mb-2 flex items-start gap-2 p-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300">
+              <span className="text-sm leading-none shrink-0">&#x26A0;&#xFE0F;</span>
+              <span className="text-[11px]">WhatsApp não autenticado. Faça login no WhatsApp Web.</span>
+            </div>
+          )}
+
           {activeTab === "progress" &&
             (hasActiveCampaign && campaign ? (
               <CampaignProgress

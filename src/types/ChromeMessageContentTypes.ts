@@ -28,4 +28,13 @@ export default interface ChromeMessageContentTypes {
     payload: undefined;
     response: boolean;
   };
+  [ChromeMessageTypes.WPP_STATUS]: {
+    payload: undefined;
+    response: {
+      ready: boolean;
+      authenticated: boolean;
+      injected: boolean;
+      error?: string;
+    };
+  };
 }

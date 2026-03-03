@@ -93,6 +93,7 @@ class CampaignManager {
     this.aborted = false;
     this.paused = false;
     campaign.status = "running";
+    campaign.pauseReason = undefined;
     await this.emitStatus();
     addLog(2, `Campanha "${campaign.name}" iniciada — ${leads.length} leads`);
 
@@ -107,6 +108,8 @@ class CampaignManager {
 
     const batchSize = campaign.batch.batchSize || leads.length;
     let batchStart = 0;
+    let pausedBySchedule = false;
+    let pausedByLimit = false;
 
     // Resume from where we left off
     const alreadySent = new Set(
@@ -121,6 +124,13 @@ class CampaignManager {
       "| already done:",
       alreadySent.size,
     );
+
+    if (pendingLeads.length === 0) {
+      campaign.status = "completed";
+      addLog(2, `Campanha "${campaign.name}" — nenhum lead pendente`);
+      await this.emitStatus();
+      return;
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated asynchronously
     while (batchStart < pendingLeads.length && !this.aborted) {
@@ -151,7 +161,10 @@ class CampaignManager {
           campaign.timing.dailyLimit > 0 &&
           campaign.dailySentCount >= campaign.timing.dailyLimit
         ) {
+          pausedByLimit = true;
           campaign.status = "paused";
+          campaign.pauseReason = `Limite diário atingido (${String(campaign.timing.dailyLimit)} msgs). Retoma amanhã automaticamente ou aumente o limite nas configurações.`;
+          addLog(2, `Limite diário atingido (${String(campaign.timing.dailyLimit)}). Campanha pausada.`);
           await this.emitStatus();
           break;
         }
@@ -166,7 +179,10 @@ class CampaignManager {
             hour < campaign.timing.schedule.startHour ||
             hour >= campaign.timing.schedule.endHour
           ) {
+            pausedBySchedule = true;
             campaign.status = "paused";
+            campaign.pauseReason = `Fora do horário permitido (${String(campaign.timing.schedule.startHour)}h às ${String(campaign.timing.schedule.endHour)}h). A campanha será retomada automaticamente no próximo horário válido.`;
+            addLog(2, `Fora do horário permitido (${String(campaign.timing.schedule.startHour)}h-${String(campaign.timing.schedule.endHour)}h). Campanha pausada.`);
             await this.emitStatus();
             break;
           }
@@ -174,6 +190,9 @@ class CampaignManager {
 
         await this.processLead(campaign, lead);
       }
+
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated asynchronously
+      if (pausedBySchedule || pausedByLimit || this.aborted) break;
 
       batchStart += batchSize;
 
@@ -192,8 +211,9 @@ class CampaignManager {
       }
     }
 
+    // Only mark as completed if all leads were actually processed
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated asynchronously
-    if (!this.aborted) {
+    if (!this.aborted && !pausedBySchedule && !pausedByLimit) {
       campaign.status = "completed";
       const sent = campaign.results.filter((r) => r.status === "sent").length;
       const failed = campaign.results.filter((r) => r.status === "failed").length;

@@ -5,4 +5,5 @@ export enum ChromeMessageTypes {
   RESUME_QUEUE = "RESUME_QUEUE",
   STOP_QUEUE = "STOP_QUEUE",
   ADD_LOG = "ADD_LOG",
+  WPP_STATUS = "WPP_STATUS",
 }

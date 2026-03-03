@@ -1,15 +1,23 @@
 {
   "name": "wtf",
-  "version": "3.7.4",
+  "version": "3.7.13",
   "description": "WTF Chrome Extension that allows you to send messages in bulk via WhatsApp™ Web",
   "main": "index.js",
+  "engines": {
+    "bun": ">=1.2.3"
+  },
+  "packageManager": "bun@1.2.3",
   "scripts": {
     "watch": "webpack --mode development --watch --progress",
     "dev": "tsc && webpack --mode development",
-    "build": "tsc && webpack",
+    "version:bump": "node -e \"const fs=require('fs');const p=JSON.parse(fs.readFileSync('./package.json','utf8'));const v=p.version.split('.');v[2]=+v[2]+1;p.version=v.join('.');fs.writeFileSync('./package.json',JSON.stringify(p,null,2)+'\\n');const m=JSON.parse(fs.readFileSync('./public/manifest.json','utf8'));m.version=p.version;fs.writeFileSync('./public/manifest.json',JSON.stringify(m,null,2)+'\\n');console.log('v'+p.version)\"",
+    "build": "bun run version:bump && tsc && webpack",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix && yarn format",
     "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "clean": "rimraf dist",
     "prepare": "husky"
   },
@@ -26,12 +34,17 @@
     "url": "git+https://github.com/marcosvrs/wtf.git"
   },
   "dependencies": {
-    "@wppconnect/wa-js": "^3.15.1",
+    "@wppconnect/wa-js": "^3.22.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.3.0",
     "@playwright/test": "^1.49.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@tsconfig/recommended": "^1.0.8",
     "@types/chrome": "^0.0.287",
     "@types/react": "^18.3.14",
@@ -48,6 +61,7 @@
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-react": "^7.37.2",
+    "happy-dom": "^20.8.3",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
     "postcss": "8.4.49",
@@ -59,13 +73,8 @@
     "tailwindcss": "^3.4.16",
     "ts-loader": "^9.5.1",
     "typescript": "^5.7.2",
+    "vitest": "^4.0.18",
     "webpack": "^5.97.1",
     "webpack-cli": "^5.1.4"
-  },
-  "engines": {
-    "node": ">=18",
-    "npm": "please-use-yarn",
-    "yarn": "^4.3.1"
-  },
-  "packageManager": "yarn@4.5.3"
+  }
 }

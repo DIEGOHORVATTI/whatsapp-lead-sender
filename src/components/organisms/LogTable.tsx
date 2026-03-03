@@ -103,6 +103,11 @@ export default class LogTable extends Component<
             ))}
           </div>
         )}
+
+        {/* Version */}
+        <p className="text-[10px] text-muted-foreground text-center mt-auto pt-2">
+          v{chrome.runtime.getManifest().version}
+        </p>
       </div>
     );
   }

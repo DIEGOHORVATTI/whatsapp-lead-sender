@@ -97,6 +97,19 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
         {/* Title */}
         <h2 className="text-sm font-medium truncate">{campaign.name}</h2>
 
+        {/* Pause reason banner */}
+        {isPaused && campaign.pauseReason && (
+          <div className="flex items-start gap-2 p-2.5 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300">
+            <span className="text-base leading-none shrink-0 mt-0.5">&#x26A0;&#xFE0F;</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-medium">Campanha pausada</span>
+              <span className="text-[11px] leading-snug opacity-90">
+                {campaign.pauseReason}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Progress Bar */}
         <div className="w-full h-5 bg-accent rounded relative">
           <div
