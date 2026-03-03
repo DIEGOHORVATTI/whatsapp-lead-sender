@@ -29,119 +29,74 @@ export default class Button extends Component<ButtonProps, unknown> {
       "ring-2",
       "ring-transparent",
       "focus:outline-none",
+      "disabled:opacity-50",
+      "disabled:cursor-not-allowed",
     ];
 
     switch (variant) {
       case "primary":
         classNames.push(
-          "bg-blue-600",
-          "dark:bg-blue-400",
-          "text-white",
-          "hover:bg-transparent",
-          "hover:text-blue-600",
-          "dark:hover:text-blue-400",
-          "hover:border-blue-600",
-          "dark:hover:border-blue-400",
-          "focus:ring-blue-600",
-          "dark:focus:ring-blue-400",
+          "bg-primary",
+          "text-primary-foreground",
+          "hover:opacity-90",
+          "focus:ring-primary",
         );
         break;
       case "secondary":
         classNames.push(
-          "bg-transparent",
-          "text-blue-600",
-          "dark:text-blue-400",
-          "hover:text-white",
-          "hover:bg-blue-600",
-          "dark:hover:bg-blue-400",
-          "hover:border-blue-600",
-          "dark:hover:border-blue-400",
-          "focus:ring-blue-600",
-          "dark:focus:ring-blue-400",
+          "bg-secondary",
+          "text-secondary-foreground",
+          "border-border",
+          "hover:bg-accent",
+          "focus:ring-primary",
         );
         break;
       case "success":
         classNames.push(
-          "bg-green-600",
-          "dark:bg-green-400",
-          "text-white",
-          "hover:bg-transparent",
-          "hover:text-green-600",
-          "dark:hover:text-green-400",
-          "hover:border-green-600",
-          "dark:hover:border-green-400",
-          "focus:ring-green-600",
-          "dark:focus:ring-green-400",
+          "bg-success",
+          "text-success-foreground",
+          "hover:opacity-90",
+          "focus:ring-success",
         );
         break;
       case "danger":
         classNames.push(
-          "bg-red-600",
-          "dark:bg-red-400",
-          "text-white",
-          "hover:bg-transparent",
-          "hover:text-red-600",
-          "dark:hover:text-red-400",
-          "hover:border-red-600",
-          "dark:hover:border-red-400",
-          "focus:ring-red-600",
-          "dark:focus:ring-red-400",
+          "bg-destructive",
+          "text-destructive-foreground",
+          "hover:opacity-90",
+          "focus:ring-destructive",
         );
         break;
       case "warning":
         classNames.push(
-          "bg-orange-600",
-          "dark:bg-orange-400",
-          "text-white",
-          "hover:bg-transparent",
-          "hover:text-orange-600",
-          "dark:hover:text-orange-400",
-          "hover:border-orange-600",
-          "dark:hover:border-orange-400",
-          "focus:ring-orange-600",
-          "dark:focus:ring-orange-400",
+          "bg-warning",
+          "text-warning-foreground",
+          "hover:opacity-90",
+          "focus:ring-warning",
         );
         break;
       case "info":
         classNames.push(
-          "bg-teal-600",
-          "dark:bg-teal-400",
-          "text-white",
-          "hover:bg-transparent",
-          "hover:text-teal-600",
-          "dark:hover:text-teal-400",
-          "hover:border-teal-600",
-          "dark:hover:border-teal-400",
-          "focus:ring-teal-600",
-          "dark:focus:ring-teal-400",
+          "bg-primary",
+          "text-primary-foreground",
+          "hover:opacity-90",
+          "focus:ring-primary",
         );
         break;
       case "light":
         classNames.push(
-          "bg-gray-200",
-          "dark:bg-gray-800",
-          "text-gray-800",
-          "dark:text-gray-200",
-          "hover:bg-transparent",
-          "hover:border-gray-800",
-          "dark:hover:border-gray-200",
-          "focus:ring-gray-800",
-          "dark:focus:ring-gray-200",
+          "bg-muted",
+          "text-foreground",
+          "hover:bg-accent",
+          "focus:ring-ring",
         );
         break;
       case "dark":
         classNames.push(
-          "bg-gray-800",
-          "dark:bg-gray-200",
-          "text-gray-200",
-          "dark:text-gray-800",
-          "hover:bg-transparent",
-          "hover:text-gray-800",
-          "dark:hover:text-gray-200",
-          "hover:border-gray-800",
-          "dark:hover:border-gray-200",
-          "focus:ring-gray-800",
-          "dark:focus:ring-gray-200",
+          "bg-foreground",
+          "text-background",
+          "hover:opacity-90",
+          "focus:ring-ring",
         );
         break;
     }

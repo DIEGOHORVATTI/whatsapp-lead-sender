@@ -26,13 +26,10 @@ export default class Box extends Component<BoxProps, unknown> {
           "mx-auto",
           "flex",
           "flex-col",
-          "bg-white",
-          "dark:bg-black",
-          "dark:text-slate-100",
+          "bg-card",
+          "text-card-foreground",
           "shadow-lg",
-          "dark:shadow-none",
           "rounded-lg",
-          // 'overflow-hidden',
           ...className.split(" "),
         ].join(" ")}
       >
@@ -41,8 +38,7 @@ export default class Box extends Component<BoxProps, unknown> {
             className={[
               "p-4",
               "border-b",
-              "border-slate-200",
-              "dark:border-gray-800",
+              "border-border",
               "flex",
               "justify-between",
               "items-center",
@@ -53,8 +49,6 @@ export default class Box extends Component<BoxProps, unknown> {
                 className={[
                   "text-lg",
                   "font-semibold",
-                  "text-slate-800",
-                  "dark:text-slate-200",
                 ].join(" ")}
               >
                 {title}
@@ -80,8 +74,7 @@ export default class Box extends Component<BoxProps, unknown> {
               "px-4",
               "py-2",
               "border-t",
-              "border-slate-200",
-              "dark:border-gray-800",
+              "border-border",
             ].join(" ")}
           >
             {footer}

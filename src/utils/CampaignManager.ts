@@ -6,10 +6,20 @@ import type {
 } from "../types/Campaign";
 import { DEFAULT_BATCH, DEFAULT_TIMING } from "../types/Campaign";
 import type { Lead } from "../types/Lead";
-import { generateMessage } from "./aiService";
 import campaignStorage from "./CampaignStorage";
+import { generateMessage } from "./aiService";
 import { downloadCSV, exportCampaignResults } from "./csvExporter";
 import { formatPhone, replaceVariables } from "./templateEngine";
+
+function addLog(level: number, message: string, contact = "", attachment = false) {
+  chrome.storage.local.get(
+    (data: { logs?: Array<{ level: number; message: string; contact: string; attachment: boolean; date: string }> }) => {
+      const logs = data.logs ?? [];
+      logs.push({ level, message, contact, attachment, date: new Date().toLocaleString() });
+      void chrome.storage.local.set({ logs });
+    },
+  );
+}
 
 type StatusCallback = (campaign: Campaign) => void;
 
@@ -77,16 +87,23 @@ class CampaignManager {
     return results;
   }
 
-  async start(
-    campaign: Campaign,
-    leads: Lead[],
-  ): Promise<void> {
+  async start(campaign: Campaign, leads: Lead[]): Promise<void> {
     this.currentCampaign = campaign;
     this.leads = leads;
     this.aborted = false;
     this.paused = false;
     campaign.status = "running";
     await this.emitStatus();
+    addLog(2, `Campanha "${campaign.name}" iniciada — ${leads.length} leads`);
+
+    console.log(
+      "[WTF Campaign] Start:",
+      campaign.name,
+      "| leads:",
+      leads.length,
+      "| sendFn:",
+      !!this.sendFn,
+    );
 
     const batchSize = campaign.batch.batchSize || leads.length;
     let batchStart = 0;
@@ -98,13 +115,22 @@ class CampaignManager {
         .map((r) => r.leadId),
     );
     const pendingLeads = leads.filter((l) => !alreadySent.has(l.id));
+    console.log(
+      "[WTF Campaign] Pending:",
+      pendingLeads.length,
+      "| already done:",
+      alreadySent.size,
+    );
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated asynchronously
     while (batchStart < pendingLeads.length && !this.aborted) {
       const batch = pendingLeads.slice(batchStart, batchStart + batchSize);
 
       for (const lead of batch) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated asynchronously
         if (this.aborted) break;
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated asynchronously
         if (this.paused) {
           campaign.status = "paused";
           await this.emitStatus();
@@ -155,7 +181,7 @@ class CampaignManager {
       if (
         campaign.batch.pauseBetweenBatches &&
         batchStart < pendingLeads.length &&
-        !this.aborted
+        !this.aborted // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- mutated asynchronously
       ) {
         campaign.status = "paused";
         await this.emitStatus();
@@ -166,16 +192,17 @@ class CampaignManager {
       }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated asynchronously
     if (!this.aborted) {
       campaign.status = "completed";
+      const sent = campaign.results.filter((r) => r.status === "sent").length;
+      const failed = campaign.results.filter((r) => r.status === "failed").length;
+      addLog(3, `Campanha concluída — ${String(sent)} enviadas, ${String(failed)} falhas`);
     }
     await this.emitStatus();
   }
 
-  private async processLead(
-    campaign: Campaign,
-    lead: Lead,
-  ): Promise<void> {
+  private async processLead(campaign: Campaign, lead: Lead): Promise<void> {
     const variant = this.assignVariant(campaign.variants);
     const result: CampaignResult = {
       leadId: lead.id,
@@ -187,11 +214,19 @@ class CampaignManager {
     try {
       const message = await this.generateForLead(lead, variant);
       result.generatedMessage = message;
+      console.log(
+        "[WTF Campaign] Processing lead:",
+        result.contact,
+        "| variant:",
+        variant.name,
+      );
 
       if (!this.sendFn) throw new Error("Send function not configured");
 
       // Try primary phone
+      console.log("[WTF Campaign] Calling sendFn for:", result.contact);
       let sent = await this.sendFn(result.contact, message);
+      console.log("[WTF Campaign] sendFn returned:", sent);
 
       // Fallback to telefone_2
       if (!sent && lead.telefone_2) {
@@ -206,13 +241,16 @@ class CampaignManager {
         result.status = "sent";
         result.sentAt = new Date().toISOString();
         campaign.dailySentCount++;
+        addLog(3, "Mensagem enviada", result.contact);
       } else {
         result.status = "failed";
         result.error = "Contact not found on WhatsApp";
+        addLog(1, "Contato não encontrado no WhatsApp", result.contact);
       }
     } catch (err) {
       result.status = "failed";
       result.error = err instanceof Error ? err.message : String(err);
+      addLog(1, `Falha: ${result.error}`, result.contact);
     }
 
     campaign.results.push(result);
@@ -244,11 +282,7 @@ class CampaignManager {
     variant: MessageVariant,
   ): Promise<string> {
     if (variant.useAI && this.aiConfig && this.aiConfig.provider !== "none") {
-      const resp = await generateMessage(
-        this.aiConfig,
-        lead,
-        variant.template,
-      );
+      const resp = await generateMessage(this.aiConfig, lead, variant.template);
       if (resp.text) return resp.text;
       // Fallback to template if AI fails
     }
@@ -258,7 +292,9 @@ class CampaignManager {
   private calculateDelay(campaign: Campaign): number {
     const cfg = campaign.timing;
     if (cfg.delayMode === "random") {
-      return (cfg.minDelay + Math.random() * (cfg.maxDelay - cfg.minDelay)) * 1000;
+      return (
+        (cfg.minDelay + Math.random() * (cfg.maxDelay - cfg.minDelay)) * 1000
+      );
     }
     return cfg.fixedDelay * 1000;
   }
@@ -325,6 +361,7 @@ class CampaignManager {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   private async emitStatus() {
     if (this.statusCallback && this.currentCampaign) {
       this.statusCallback({ ...this.currentCampaign });

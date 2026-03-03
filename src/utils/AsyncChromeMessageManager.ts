@@ -19,7 +19,7 @@ type MessageHandler<K extends keyof ChromeMessageContentTypes> = (
   | Promise<ChromeMessageContentTypes[K]["response"]>;
 
 export default class AsyncChromeMessageManager {
-  constructor(private source: "popup" | "contentScript" | "webpage") {
+  constructor(private source: "popup" | "sidepanel" | "contentScript" | "webpage") {
     if (this.source === "contentScript") {
       this.forwardMessagesFromWebpageToPopup();
       this.forwardResponsesFromPopupToWebpage();
@@ -68,7 +68,7 @@ export default class AsyncChromeMessageManager {
       if (this.source !== "webpage") {
         this.addExtensionMessageHandler(type, handler);
       }
-      if (this.source !== "popup") {
+      if (this.source !== "popup" && this.source !== "sidepanel") {
         this.addWebpageMessageHandler(type, handler);
       }
     } catch (error) {
@@ -174,7 +174,7 @@ export default class AsyncChromeMessageManager {
           }
         };
 
-        if (this.source !== "popup") {
+        if (this.source !== "popup" && this.source !== "sidepanel") {
           this.sendWebpageMessage(message, listener);
         }
         if (this.source !== "webpage") {
@@ -217,6 +217,13 @@ export default class AsyncChromeMessageManager {
 
     if (this.source === "popup") {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          void chrome.tabs.sendMessage(tabs[0].id, message);
+        }
+      });
+    } else if (this.source === "sidepanel") {
+      // Side panel can be open alongside any tab, so target WhatsApp tab directly
+      chrome.tabs.query({ url: "https://web.whatsapp.com/*" }, (tabs) => {
         if (tabs[0]?.id) {
           void chrome.tabs.sendMessage(tabs[0].id, message);
         }

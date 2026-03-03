@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_appName__",
-  "version": "3.7.3",
+  "version": "3.7.4",
   "action": {
     "default_icon": {
       "16": "icons/wtf16.png",
@@ -13,8 +13,13 @@
       "512": "icons/wtf512.png",
       "1024": "icons/wtf1024.png"
     },
-    "default_popup": "popup.html",
     "default_title": "WTF"
+  },
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
   },
   "default_locale": "en",
   "description": "__MSG_appDesc__",
@@ -45,11 +50,7 @@
     "matches": ["https://web.whatsapp.com/*"]
   },
   "homepage_url": "https://github.com/marcosvrs/wtf",
-  "options_ui": {
-    "open_in_tab": true,
-    "page": "options.html"
-  },
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "tabs", "storage", "sidePanel"],
   "short_name": "WTF",
   "storage": {
     "managed_schema": "schema.json"

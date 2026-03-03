@@ -8,20 +8,19 @@ import {
 const classNames = [
   "w-full",
   "flex-auto",
-  "bg-slate-100",
-  "dark:bg-slate-900",
+  "bg-muted",
+  "text-foreground",
   "border",
-  "border-slate-400",
-  "dark:border-slate-600",
+  "border-input",
   "p-1",
   "rounded-lg",
   "transition-shadow",
   "ease-in-out",
   "duration-150",
   "focus:shadow-equal",
-  "focus:shadow-blue-800",
-  "dark:focus:shadow-blue-200",
+  "focus:shadow-ring",
   "focus:outline-none",
+  "placeholder:text-muted-foreground",
 ];
 
 export class ControlInput extends Component<

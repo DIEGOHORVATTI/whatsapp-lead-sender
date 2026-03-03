@@ -29,15 +29,16 @@ export default class TimingControls extends Component<TimingControlsProps> {
     return (
       <div className="flex flex-col gap-3">
         {/* Delay Mode */}
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium w-32">Delay:</label>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium">Delay</label>
           <ControlSelect
             value={config.delayMode}
-            onChange={(e) =>
+            onChange={(e) => {
               this.update({
+                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                 delayMode: e.target.value as "fixed" | "random",
-              })
-            }
+              });
+            }}
           >
             <option value="fixed">Fixo</option>
             <option value="random">Aleatório</option>
@@ -45,140 +46,151 @@ export default class TimingControls extends Component<TimingControlsProps> {
         </div>
 
         {config.delayMode === "fixed" ? (
-          <div className="flex items-center gap-2">
-            <label className="text-sm w-32">Segundos:</label>
-            <ControlInput
-              type="range"
-              min="1"
-              max="30"
-              step="1"
-              value={config.fixedDelay}
-              onChange={(e) =>
-                this.update({ fixedDelay: Number(e.target.value) })
-              }
-            />
-            <span className="text-sm w-8">{config.fixedDelay}s</span>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs">Segundos</label>
+            <div className="flex items-center gap-2">
+              <ControlInput
+                type="range"
+                min="1"
+                max="30"
+                step="1"
+                value={config.fixedDelay}
+                onChange={(e) => {
+                  this.update({ fixedDelay: Number(e.target.value) });
+                }}
+                className="flex-1"
+              />
+              <span className="text-xs font-mono w-6 text-right">
+                {config.fixedDelay}s
+              </span>
+            </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <label className="text-sm w-32">Min-Max:</label>
-            <ControlInput
-              type="number"
-              min="1"
-              max="60"
-              value={config.minDelay}
-              onChange={(e) =>
-                this.update({ minDelay: Number(e.target.value) })
-              }
-              className="w-16"
-            />
-            <span className="text-sm">-</span>
-            <ControlInput
-              type="number"
-              min="1"
-              max="120"
-              value={config.maxDelay}
-              onChange={(e) =>
-                this.update({ maxDelay: Number(e.target.value) })
-              }
-              className="w-16"
-            />
-            <span className="text-sm">seg</span>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs">Min — Max (seg)</label>
+            <div className="flex items-center gap-2">
+              <ControlInput
+                type="number"
+                min="1"
+                max="60"
+                value={config.minDelay}
+                onChange={(e) => {
+                  this.update({ minDelay: Number(e.target.value) });
+                }}
+                className="flex-1"
+              />
+              <span className="text-xs">—</span>
+              <ControlInput
+                type="number"
+                min="1"
+                max="120"
+                value={config.maxDelay}
+                onChange={(e) => {
+                  this.update({ maxDelay: Number(e.target.value) });
+                }}
+                className="flex-1"
+              />
+            </div>
           </div>
         )}
 
         {/* Daily Limit */}
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium w-32">Limite diário:</label>
-          <ControlInput
-            type="number"
-            min="0"
-            max="500"
-            value={config.dailyLimit}
-            onChange={(e) =>
-              this.update({ dailyLimit: Number(e.target.value) })
-            }
-            className="w-20"
-          />
-          <span className="text-xs text-slate-500">0 = sem limite</span>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium">Limite diário</label>
+          <div className="flex items-center gap-2">
+            <ControlInput
+              type="number"
+              min="0"
+              max="500"
+              value={config.dailyLimit}
+              onChange={(e) => {
+                this.update({ dailyLimit: Number(e.target.value) });
+              }}
+              className="flex-1"
+            />
+            <span className="text-[10px] text-muted-foreground shrink-0">
+              0 = sem limite
+            </span>
+          </div>
         </div>
 
         {/* Schedule */}
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium w-32">Horário:</label>
-          <input
-            type="checkbox"
-            checked={schedule.enabled}
-            onChange={(e) =>
-              this.update({
-                schedule: { ...schedule, enabled: e.target.checked },
-              })
-            }
-          />
-          <span className="text-sm">Só horário comercial</span>
-        </div>
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 text-xs font-medium">
+            <input
+              type="checkbox"
+              checked={schedule.enabled}
+              onChange={(e) => {
+                this.update({
+                  schedule: { ...schedule, enabled: e.target.checked },
+                });
+              }}
+            />
+            Só horário comercial
+          </label>
 
-        {schedule.enabled && (
-          <>
-            <div className="flex items-center gap-2 ml-32">
-              <ControlInput
-                type="number"
-                min="0"
-                max="23"
-                value={schedule.startHour}
-                onChange={(e) =>
-                  this.update({
-                    schedule: {
-                      ...schedule,
-                      startHour: Number(e.target.value),
-                    },
-                  })
-                }
-                className="w-16"
-              />
-              <span className="text-sm">h até</span>
-              <ControlInput
-                type="number"
-                min="0"
-                max="23"
-                value={schedule.endHour}
-                onChange={(e) =>
-                  this.update({
-                    schedule: {
-                      ...schedule,
-                      endHour: Number(e.target.value),
-                    },
-                  })
-                }
-                className="w-16"
-              />
-              <span className="text-sm">h</span>
-            </div>
-            <div className="flex items-center gap-1 ml-32">
-              {DAYS.map((d) => (
-                <button
-                  key={d.value}
-                  type="button"
-                  onClick={() => {
-                    const days = schedule.daysOfWeek.includes(d.value)
-                      ? schedule.daysOfWeek.filter((x) => x !== d.value)
-                      : [...schedule.daysOfWeek, d.value];
+          {schedule.enabled && (
+            <>
+              <div className="flex items-center gap-2">
+                <ControlInput
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={schedule.startHour}
+                  onChange={(e) => {
                     this.update({
-                      schedule: { ...schedule, daysOfWeek: days },
+                      schedule: {
+                        ...schedule,
+                        startHour: Number(e.target.value),
+                      },
                     });
                   }}
-                  className={`px-2 py-1 text-xs rounded ${
-                    schedule.daysOfWeek.includes(d.value)
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
-                  }`}
-                >
-                  {d.label}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+                  className="w-14"
+                />
+                <span className="text-xs">h até</span>
+                <ControlInput
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={schedule.endHour}
+                  onChange={(e) => {
+                    this.update({
+                      schedule: {
+                        ...schedule,
+                        endHour: Number(e.target.value),
+                      },
+                    });
+                  }}
+                  className="w-14"
+                />
+                <span className="text-xs">h</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {DAYS.map((d) => (
+                  <button
+                    key={d.value}
+                    type="button"
+                    onClick={() => {
+                      const days = schedule.daysOfWeek.includes(d.value)
+                        ? schedule.daysOfWeek.filter((x) => x !== d.value)
+                        : [...schedule.daysOfWeek, d.value];
+                      this.update({
+                        schedule: { ...schedule, daysOfWeek: days },
+                      });
+                    }}
+                    className={`px-2 py-1 text-xs rounded ${
+                      schedule.daysOfWeek.includes(d.value)
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     );
   }
