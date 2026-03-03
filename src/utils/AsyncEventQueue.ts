@@ -1,4 +1,5 @@
-import type QueueStatus from "types/QueueStatus";
+import type { TimingConfig } from "../types/Campaign";
+import type QueueStatus from "../types/QueueStatus";
 
 interface QueueItem<T> {
   eventHandler: (detail: T) => Promise<void>;
@@ -20,8 +21,82 @@ class AsyncEventQueue {
   private paused = false;
   private pausePromiseResolve?: ((value?: unknown) => void) | undefined;
 
+  // Campaign timing extensions
+  private timingConfig?: TimingConfig;
+  private batchProcessed = 0;
+  private batchPaused = false;
+  private dailySent = 0;
+  private dailyResetDate = "";
+
   private async wait(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  public setTimingConfig(config: TimingConfig) {
+    this.timingConfig = config;
+  }
+
+  public setDailyState(sent: number, resetDate: string) {
+    this.dailySent = sent;
+    this.dailyResetDate = resetDate;
+  }
+
+  private getDelay(itemDelay?: number): number {
+    if (!this.timingConfig) return (itemDelay || 0) * 1000;
+
+    const cfg = this.timingConfig;
+    if (cfg.delayMode === "random") {
+      const range = cfg.maxDelay - cfg.minDelay;
+      return (cfg.minDelay + Math.random() * range) * 1000;
+    }
+    return cfg.fixedDelay * 1000;
+  }
+
+  private checkDailyLimit(): boolean {
+    if (!this.timingConfig || this.timingConfig.dailyLimit <= 0) return true;
+
+    const today = new Date().toISOString().slice(0, 10);
+    if (this.dailyResetDate !== today) {
+      this.dailySent = 0;
+      this.dailyResetDate = today;
+    }
+    return this.dailySent < this.timingConfig.dailyLimit;
+  }
+
+  private async waitForSchedule(): Promise<void> {
+    if (!this.timingConfig?.schedule.enabled) return;
+
+    const sched = this.timingConfig.schedule;
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay(); // 0=Sun, 1=Mon, ...
+
+    if (sched.daysOfWeek.includes(day) && hour >= sched.startHour && hour < sched.endHour) {
+      return; // Within schedule
+    }
+
+    // Calculate ms until next schedule window
+    let target = new Date(now);
+    for (let attempt = 0; attempt < 8; attempt++) {
+      target.setDate(target.getDate() + (attempt === 0 ? 0 : 1));
+      target.setHours(sched.startHour, 0, 0, 0);
+      if (target > now && sched.daysOfWeek.includes(target.getDay())) {
+        break;
+      }
+    }
+
+    const msToWait = target.getTime() - now.getTime();
+    if (msToWait > 0 && msToWait < 7 * 24 * 60 * 60 * 1000) {
+      this.waiting = Date.now();
+      // Wait in chunks so we can respond to abort/pause
+      let waited = 0;
+      while (waited < msToWait) {
+        await this.wait(Math.min(5000, msToWait - waited));
+        waited += 5000;
+        if (this.aborted || this.paused) break;
+      }
+      this.waiting = false;
+    }
   }
 
   public async add<T extends { delay?: number }>({
@@ -36,6 +111,8 @@ class AsyncEventQueue {
       this.isProcessing = true;
       this.startTime = Date.now();
       this.processedItems = 0;
+      this.batchProcessed = 0;
+      this.batchPaused = false;
       this.items = [];
 
       while (this.queue.length > 0) {
@@ -50,9 +127,44 @@ class AsyncEventQueue {
           break;
         }
 
+        // Schedule check
+        await this.waitForSchedule();
+        if (this.aborted) {
+          this.remainingItems = this.queue.length;
+          this.queue = [];
+          break;
+        }
+
+        // Daily limit check
+        if (!this.checkDailyLimit()) {
+          this.paused = true;
+          this.batchPaused = true;
+          continue;
+        }
+
+        // Batch pause check
+        if (
+          this.timingConfig &&
+          this.timingConfig.dailyLimit > 0 &&
+          this.batchProcessed > 0 &&
+          this.batchProcessed %
+            (this.timingConfig.dailyLimit > 0
+              ? Math.min(
+                  this.timingConfig.dailyLimit,
+                  10,
+                )
+              : 10) ===
+            0
+        ) {
+          // Batch complete — if pauseBetweenBatches, auto-pause
+          // Handled via external batch config
+        }
+
         const item = this.queue.shift();
         if (item === undefined) continue;
         this.processedItems++;
+        this.batchProcessed++;
+        this.dailySent++;
         const startTime = Date.now();
         this.processing = Date.now();
         try {
@@ -64,11 +176,12 @@ class AsyncEventQueue {
         const elapsedTime = Date.now() - startTime;
         this.items.push({ detail: item.detail, startTime, elapsedTime });
 
-        if (item.detail.delay && this.queue.length !== 0) {
+        // Delay between messages
+        const delayMs = this.getDelay(item.detail.delay);
+        if (delayMs > 0 && this.queue.length !== 0) {
           this.waiting = Date.now();
           const waitStart = Date.now();
-          const waitTarget = item.detail.delay * 1000;
-          while (Date.now() - waitStart < waitTarget) {
+          while (Date.now() - waitStart < delayMs) {
             await this.wait(100);
             if (this.paused) {
               await new Promise(
@@ -99,6 +212,7 @@ class AsyncEventQueue {
   public resume() {
     if (this.paused && this.pausePromiseResolve) {
       this.paused = false;
+      this.batchPaused = false;
       this.pausePromiseResolve();
       this.pausePromiseResolve = undefined;
     }
@@ -128,6 +242,14 @@ class AsyncEventQueue {
       remainingItems: this.aborted ? this.remainingItems : this.queue.length,
       totalItems: this.processedItems + this.queue.length,
     };
+  }
+
+  public getDailySent(): number {
+    return this.dailySent;
+  }
+
+  public isBatchPaused(): boolean {
+    return this.batchPaused;
   }
 }
 

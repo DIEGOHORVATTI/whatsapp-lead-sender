@@ -157,6 +157,10 @@ class Popup extends Component<
     }
   };
 
+  handleCampaign = () => {
+    window.open(chrome.runtime.getURL("options.html#campaign"));
+  };
+
   formatTime = (milliseconds: number) => {
     const hours = Math.floor(milliseconds / 3600000);
     const minutes = Math.floor((milliseconds % 3600000) / 60000);
@@ -274,6 +278,13 @@ class Popup extends Component<
                   onClick={this.handleOptions}
                 >
                   {this.optionsButtonLabel}
+                </Button>
+                <Button
+                  variant="success"
+                  type="button"
+                  onClick={this.handleCampaign}
+                >
+                  Campanha
                 </Button>
               </div>
             </Box>
