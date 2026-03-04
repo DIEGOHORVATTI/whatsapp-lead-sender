@@ -2,6 +2,7 @@ import { Component, createRef, type RefObject } from 'react'
 import type { Lead } from '../../types/Lead'
 import { LEAD_FIELDS } from '../../types/Lead'
 import { autoMapColumns, mapRowsToLeads, parseCSV } from '../../utils/csvParser'
+import { t } from '../../utils/i18n'
 import { ControlSelect } from '../atoms/ControlFactory'
 
 interface ContactInputProps {
@@ -73,7 +74,7 @@ export default class ContactInput extends Component<ContactInputProps, ContactIn
       try {
         const { headers, rows } = parseCSV(String(reader.result))
         if (headers.length === 0) {
-          this.setState({ csvError: 'CSV vazio ou inválido' })
+          this.setState({ csvError: t('csv_empty_invalid') })
           return
         }
         const mapping = autoMapColumns(headers)
@@ -90,7 +91,7 @@ export default class ContactInput extends Component<ContactInputProps, ContactIn
           }
         )
       } catch {
-        this.setState({ csvError: 'Erro ao ler CSV' })
+        this.setState({ csvError: t('csv_read_error') })
       }
     }
     reader.readAsText(file, 'utf-8')
@@ -136,7 +137,7 @@ export default class ContactInput extends Component<ContactInputProps, ContactIn
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Digitar números
+              {t('type_numbers')}
             </button>
             <button
               type="button"
@@ -149,18 +150,18 @@ export default class ContactInput extends Component<ContactInputProps, ContactIn
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Importar CSV
+              {t('import_csv')}
             </button>
           </div>
 
           {mode === 'csv' && csvRows.length > 0 && (
             <span className="text-xs text-green-600 dark:text-green-400">
-              {csvRows.length} leads carregados
+              {csvRows.length} {t('leads_loaded')}
             </span>
           )}
           {mode === 'manual' && manualText.trim() && (
             <span className="text-xs text-green-600 dark:text-green-400">
-              {manualText.split(/[\n\t,;]/).filter((s) => s.trim()).length} contatos
+              {manualText.split(/[\n\t,;]/).filter((s) => s.trim()).length} {t('contacts')}
             </span>
           )}
         </div>
@@ -170,7 +171,7 @@ export default class ContactInput extends Component<ContactInputProps, ContactIn
           <textarea
             value={manualText}
             onChange={this.handleManualChange}
-            placeholder="Cole os números, um por linha (ex: 5511999999999)"
+            placeholder={t('paste_numbers_placeholder')}
             rows={3}
             className="w-full bg-muted text-foreground border border-input p-2 rounded-lg text-sm focus:shadow-equal focus:shadow-ring focus:outline-none transition-shadow placeholder:text-muted-foreground"
           />
@@ -196,7 +197,7 @@ export default class ContactInput extends Component<ContactInputProps, ContactIn
                   }}
                   className="text-xs text-primary hover:underline"
                 >
-                  {showMapping ? 'Ocultar mapeamento' : 'Ajustar mapeamento'}
+                  {showMapping ? t('hide_mapping') : t('adjust_mapping')}
                 </button>
               )}
             </div>
@@ -218,7 +219,7 @@ export default class ContactInput extends Component<ContactInputProps, ContactIn
                         }}
                         className="text-[11px] py-0.5"
                       >
-                        <option value="">— ignorar —</option>
+                        <option value="">{t('ignore')}</option>
                         {LEAD_FIELDS.map(({ key, label }) => (
                           <option key={key} value={key}>
                             {label}

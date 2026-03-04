@@ -6,6 +6,7 @@ import type { BatchConfig, TimingConfig } from '../../types/Campaign'
 import Button from '../atoms/Button'
 import { ControlInput, ControlSelect, ControlTextArea } from '../atoms/ControlFactory'
 import TimingControls from './TimingControls'
+import { t } from '../../utils/i18n'
 
 interface ConfigPanelProps {
   timing: TimingConfig
@@ -70,10 +71,10 @@ export default class ConfigPanel extends Component<ConfigPanelProps, ConfigPanel
         >
           <span className="flex items-center gap-2">
             <span className="text-base">⚙</span>
-            Configurações
+            {t('settings')}
             {aiConfig.provider !== 'none' && (
               <span className="text-[10px] px-1.5 py-0.5 bg-secondary-lighter text-primary rounded">
-                IA: {aiConfig.provider}
+                {t('ai')}: {aiConfig.provider}
               </span>
             )}
             {attachment && (
@@ -91,11 +92,11 @@ export default class ConfigPanel extends Component<ConfigPanelProps, ConfigPanel
             <div className="flex flex-wrap gap-1 mb-3">
               {(
                 [
-                  ['ai', 'IA'],
-                  ['timing', 'Timing'],
-                  ['batch', 'Lotes'],
-                  ['attachment', 'Anexo'],
-                ] as const
+                  ['ai', t('ai')],
+                  ['timing', t('timing')],
+                  ['batch', t('batches')],
+                  ['attachment', t('attachment')],
+                ] as [ConfigPanelState['activeSection'], string][]
               ).map(([key, label]) => (
                 <button
                   key={key}
@@ -118,7 +119,7 @@ export default class ConfigPanel extends Component<ConfigPanelProps, ConfigPanel
             {activeSection === 'ai' && (
               <div className="flex flex-col gap-2.5">
                 <div className="flex items-center gap-2">
-                  <label className="text-xs w-20">Provider:</label>
+                  <label className="text-xs w-20">{t('provider')}:</label>
                   <ControlSelect
                     value={aiConfig.provider}
                     onChange={(e) => {
@@ -131,7 +132,7 @@ export default class ConfigPanel extends Component<ConfigPanelProps, ConfigPanel
                     }}
                     className="text-xs"
                   >
-                    <option value="none">Desativado</option>
+                    <option value="none">{t('disabled')}</option>
                     <option value="claude">Claude</option>
                     <option value="openai">OpenAI</option>
                   </ControlSelect>
@@ -139,7 +140,7 @@ export default class ConfigPanel extends Component<ConfigPanelProps, ConfigPanel
                 {aiConfig.provider !== 'none' && (
                   <>
                     <div className="flex items-center gap-2">
-                      <label className="text-xs w-20">API Key:</label>
+                      <label className="text-xs w-20">{t('api_key')}:</label>
                       <ControlInput
                         type="password"
                         value={aiConfig.apiKey}
@@ -154,7 +155,7 @@ export default class ConfigPanel extends Component<ConfigPanelProps, ConfigPanel
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <label className="text-xs w-20">Modelo:</label>
+                      <label className="text-xs w-20">{t('model')}:</label>
                       <ControlSelect
                         value={aiConfig.model}
                         onChange={(e) => {
@@ -173,7 +174,7 @@ export default class ConfigPanel extends Component<ConfigPanelProps, ConfigPanel
                       </ControlSelect>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-xs">Prompt base:</label>
+                      <label className="text-xs">{t('base_prompt')}:</label>
                       <ControlTextArea
                         value={aiConfig.basePrompt}
                         onChange={(e) => {
@@ -200,7 +201,7 @@ export default class ConfigPanel extends Component<ConfigPanelProps, ConfigPanel
             {activeSection === 'batch' && (
               <div className="flex flex-col gap-2.5">
                 <div className="flex items-center gap-2">
-                  <label className="text-xs w-32">Msgs por lote:</label>
+                  <label className="text-xs w-32">{t('msgs_per_batch')}:</label>
                   <ControlInput
                     type="number"
                     min={1}
@@ -226,7 +227,7 @@ export default class ConfigPanel extends Component<ConfigPanelProps, ConfigPanel
                       })
                     }}
                   />
-                  Pausar entre lotes
+                  {t('pause_between_batches_short')}
                 </label>
               </div>
             )}
@@ -253,7 +254,7 @@ export default class ConfigPanel extends Component<ConfigPanelProps, ConfigPanel
                       }}
                       className="text-[10px] px-1.5 py-0.5"
                     >
-                      Remover
+                      {t('remove')}
                     </Button>
                   </div>
                 )}

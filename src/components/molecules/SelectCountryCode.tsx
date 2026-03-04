@@ -1,4 +1,5 @@
 import { type ChangeEvent, Component, createRef } from 'react'
+import { t } from '../../utils/i18n'
 import ENcountryCodes from '../../countryCodes.en.json'
 import PTcountryCodes from '../../countryCodes.pt.json'
 import { ControlInput } from '../atoms/ControlFactory'
@@ -16,8 +17,7 @@ export default class SelectCountryCode extends Component<
 > {
   constructor() {
     super({})
-    this.defaultLabelSelectCountryCode = chrome.i18n.getMessage('defaultLabelSelectCountryCode')
-    const defaultOptions: CountryCode[] = [{ value: 0, label: this.defaultLabelSelectCountryCode }]
+    const defaultOptions: CountryCode[] = [{ value: 0, label: t('no_prefix') }]
 
     const language = chrome.i18n.getUILanguage().substring(0, 2)
     let module = ENcountryCodes
@@ -40,7 +40,6 @@ export default class SelectCountryCode extends Component<
   }
 
   wrapperRef = createRef<HTMLDivElement>()
-  defaultLabelSelectCountryCode: string
 
   toggleOpen = () => {
     this.setState((prevState) => ({
@@ -135,7 +134,7 @@ export default class SelectCountryCode extends Component<
           ].join(' ')}
           onClick={this.toggleOpen}
         >
-          <span>{selectedValue ? selectedValue.label : 'Selecione um Prefixo'}</span>
+          <span>{selectedValue ? selectedValue.label : t('select_prefix')}</span>
           <svg
             className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
             width="16"
@@ -158,7 +157,7 @@ export default class SelectCountryCode extends Component<
             <ControlInput
               className="p-2 w-full"
               type="text"
-              placeholder="Procurar"
+              placeholder={t('search_prefix')}
               value={searchValue}
               onChange={this.handleSearch}
             />
@@ -177,7 +176,7 @@ export default class SelectCountryCode extends Component<
                 ))
               ) : (
                 <li className="p-2 cursor-default text-slate-400 dark:text-slate-600">
-                  Nenhum prefixo encontrado
+                  {t('no_prefix_found')}
                 </li>
               )}
             </ul>

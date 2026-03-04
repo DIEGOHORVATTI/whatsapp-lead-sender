@@ -2,6 +2,7 @@ import { Component } from 'react'
 import type { TimingConfig, SafetyLevel } from '../../types/Campaign'
 import { SAFETY_PRESETS } from '../../types/Campaign'
 import { ControlInput } from '../atoms/ControlFactory'
+import { t } from '../../utils/i18n'
 
 interface TimingControlsProps {
   config: TimingConfig
@@ -12,15 +13,17 @@ interface TimingControlsState {
   activeTooltip: string | null
 }
 
-const DAYS = [
-  { value: 0, label: 'Dom' },
-  { value: 1, label: 'Seg' },
-  { value: 2, label: 'Ter' },
-  { value: 3, label: 'Qua' },
-  { value: 4, label: 'Qui' },
-  { value: 5, label: 'Sex' },
-  { value: 6, label: 'Sáb' },
-]
+function getDays() {
+  return [
+    { value: 0, label: t('day_sun') },
+    { value: 1, label: t('day_mon') },
+    { value: 2, label: t('day_tue') },
+    { value: 3, label: t('day_wed') },
+    { value: 4, label: t('day_thu') },
+    { value: 5, label: t('day_fri') },
+    { value: 6, label: t('day_sat') },
+  ]
+}
 
 const LEVEL_STYLES: Record<
   SafetyLevel,
@@ -48,11 +51,11 @@ const LEVEL_STYLES: Record<
 
 function detectSafetyLevel(config: TimingConfig): SafetyLevel | null {
   for (const [level, preset] of Object.entries(SAFETY_PRESETS)) {
-    const t = preset.timing
+    const tm = preset.timing
     if (
-      config.minDelay === t.minDelay &&
-      config.maxDelay === t.maxDelay &&
-      config.dailyLimit === t.dailyLimit
+      config.minDelay === tm.minDelay &&
+      config.maxDelay === tm.maxDelay &&
+      config.dailyLimit === tm.dailyLimit
     ) {
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       return level as SafetyLevel
@@ -98,14 +101,14 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
         {/* Safety Presets */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-1.5">
-            <label className="text-xs font-medium">Nível de segurança</label>
+            <label className="text-xs font-medium">{t('safety_level')}</label>
             <Tooltip
               id="safety"
               active={activeTooltip === 'safety'}
               onToggle={() => {
                 this.toggleTooltip('safety')
               }}
-              text="O WhatsApp detecta envios automáticos por padrões de tempo. Intervalos aleatórios e limites diários protegem sua conta contra banimento."
+              text={t('safety_tooltip')}
             />
           </div>
           <div className="flex gap-1.5">
@@ -140,7 +143,7 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
           )}
           {!currentLevel && (
             <p className="text-[10px] text-muted-foreground leading-tight">
-              Configuração personalizada
+              {t('custom_config')}
             </p>
           )}
         </div>
@@ -148,14 +151,14 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
         {/* Random Delay (always random) */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
-            <label className="text-xs font-medium">Intervalo aleatório (seg)</label>
+            <label className="text-xs font-medium">{t('random_interval')}</label>
             <Tooltip
               id="delay"
               active={activeTooltip === 'delay'}
               onToggle={() => {
                 this.toggleTooltip('delay')
               }}
-              text="O modo aleatório é obrigatório para simular comportamento humano. Intervalos fixos criam padrões detectáveis pelo WhatsApp."
+              text={t('random_delay_tooltip')}
             />
           </div>
           <div className="flex items-center gap-2">
@@ -190,14 +193,14 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
         {/* Daily Limit */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
-            <label className="text-xs font-medium">Limite diário</label>
+            <label className="text-xs font-medium">{t('daily_limit')}</label>
             <Tooltip
               id="limit"
               active={activeTooltip === 'limit'}
               onToggle={() => {
                 this.toggleTooltip('limit')
               }}
-              text="Contas novas devem enviar no máximo 20 msgs/dia. Contas antigas podem chegar a 80, mas nunca ultrapasse 200."
+              text={t('daily_limit_tooltip')}
             />
           </div>
           <div className="flex items-center gap-2">
@@ -211,7 +214,7 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
               }}
               className="flex-1"
             />
-            <span className="text-[10px] text-muted-foreground shrink-0">0 = sem limite</span>
+            <span className="text-[10px] text-muted-foreground shrink-0">{t('no_limit')}</span>
           </div>
         </div>
 
@@ -227,7 +230,7 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
                 })
               }}
             />
-            Só horário comercial
+            {t('business_hours_only')}
           </label>
 
           {schedule.enabled && (
@@ -248,7 +251,7 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
                   }}
                   className="w-14"
                 />
-                <span className="text-xs">h até</span>
+                <span className="text-xs">{t('hour_until')}</span>
                 <ControlInput
                   type="number"
                   min="0"
@@ -264,10 +267,10 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
                   }}
                   className="w-14"
                 />
-                <span className="text-xs">h</span>
+                <span className="text-xs">{t('hour')}</span>
               </div>
               <div className="flex flex-wrap gap-1">
-                {DAYS.map((d) => (
+                {getDays().map((d) => (
                   <button
                     key={d.value}
                     type="button"

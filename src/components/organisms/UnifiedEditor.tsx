@@ -1,4 +1,5 @@
 import { Component, createRef, type RefObject } from 'react'
+import { t } from '../../utils/i18n'
 import type { AIConfig } from '../../types/AIConfig'
 import { DEFAULT_AI_CONFIG } from '../../types/AIConfig'
 import type { Attachment } from '../../types/Attachment'
@@ -71,12 +72,12 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
       'Olá {decisor}! Vi que a {nome_fantasia} atua em {segmento} em {cidade}. Temos uma solução que reduz faltas de pacientes em até 70%. Posso te mostrar?',
     ]
     this.state = {
-      name: ic?.name ?? `Campanha ${new Date().toLocaleDateString('pt-BR')}`,
+      name: ic?.name ?? `${t('campaign')} ${new Date().toLocaleDateString()}`,
       leads: [],
       variants: ic?.variants.map(normalizeVariant) ?? [
         {
           id: crypto.randomUUID(),
-          name: 'Variante A',
+          name: t('variant_a'),
           template: defaultTemplates[0]!,
           templates: defaultTemplates,
           useAI: false,
@@ -178,20 +179,20 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
     const now = new Date()
     const hour = now.getHours()
     const day = now.getDay()
-    const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+    const dayNames = [t('day_sun'), t('day_mon'), t('day_tue'), t('day_wed'), t('day_thu'), t('day_fri'), t('day_sat')]
     const allowedDays = schedule.daysOfWeek.map((d) => dayNames[d]).join(', ')
 
     if (!schedule.daysOfWeek.includes(day)) {
       this.setState({
         outsideSchedule: true,
-        scheduleReason: `Hoje (${dayNames[day] ?? ''}) não é um dia permitido. Dias permitidos: ${allowedDays}.`,
+        scheduleReason: t('today_not_allowed', { day: dayNames[day] ?? '', allowedDays }),
       })
       return
     }
     if (hour < schedule.startHour || hour >= schedule.endHour) {
       this.setState({
         outsideSchedule: true,
-        scheduleReason: `Fora do horário permitido (${String(schedule.startHour)}h às ${String(schedule.endHour)}h). Horário atual: ${String(hour)}h.`,
+        scheduleReason: t('outside_schedule', { start: String(schedule.startHour), end: String(schedule.endHour), current: String(hour) }),
       })
       return
     }
@@ -213,7 +214,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
       ...variants,
       {
         id: crypto.randomUUID(),
-        name: `Variante ${letter}`,
+        name: `${t('variant')} ${letter}`,
         template: '',
         templates: [''],
         useAI: false,
@@ -299,7 +300,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
     const tpl = variant.templates.length > 0 ? variant.templates.join('\n') : variant.template
     const resp = await generateMessage(aiConfig, lead, tpl)
     this.setState({
-      aiPreviewMessage: resp.text ? resp.text : (resp.error ?? 'Erro ao gerar'),
+      aiPreviewMessage: resp.text ? resp.text : (resp.error ?? t('ai_error')),
       aiPreviewLoading: false,
     })
   }
@@ -402,27 +403,27 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
       return (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium">Preview — {fullPreviewResults.length} msgs</h2>
+            <h2 className="text-sm font-medium">{t('preview')} — {fullPreviewResults.length} msgs</h2>
             <button
               type="button"
               onClick={() => {
                 this.setState({ showFullPreview: false })
               }}
-              className="text-xs text-primary hover:underline"
+              className="px-3 py-1.5 text-xs font-medium text-primary bg-primary/8 hover:bg-primary/16 rounded-lg transition-colors"
             >
-              Voltar
+              {t('back')}
             </button>
           </div>
 
           {fullPreviewLoading ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
-              Gerando previews...
+              {t('generating_previews')}
             </div>
           ) : (
             <>
               <input
                 type="text"
-                placeholder="Buscar..."
+                placeholder={t('search')}
                 value={fullPreviewSearch}
                 onChange={(e) => {
                   this.setState({ fullPreviewSearch: e.target.value })
@@ -458,7 +459,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                     disabled={this.state.outsideSchedule}
                     className="text-xs w-full"
                   >
-                    Iniciar
+                    {t('start')}
                   </Button>
                 </span>
                 <Button
@@ -468,7 +469,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                   }}
                   className="text-xs"
                 >
-                  Voltar
+                  {t('back')}
                 </Button>
               </div>
             </>
@@ -487,7 +488,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
             this.setState({ name: e.target.value })
             this.persistConfig({ editorName: e.target.value })
           }}
-          placeholder="Nome da campanha"
+          placeholder={t('campaign_name_placeholder')}
           className="text-sm"
         />
 
@@ -501,7 +502,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
               }}
               className="text-xs flex-1"
             >
-              Selecionar Contatos Salvos {leads.length > 0 ? `(${String(leads.length)})` : ''}
+              {t('select_saved_contacts')} {leads.length > 0 ? `(${String(leads.length)})` : ''}
             </Button>
           </div>
           <ContactInput
@@ -580,7 +581,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
             <button
               type="button"
               onClick={this.addVariant}
-              className="px-2 py-1 text-xs text-primary hover:bg-secondary-lighter/30 rounded"
+              className="w-7 h-7 flex items-center justify-center text-sm font-medium text-primary bg-primary/8 hover:bg-primary/16 rounded-lg transition-colors"
             >
               +
             </button>
@@ -601,25 +602,29 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                 className="w-28 text-xs font-medium"
               />
               <div className="flex items-center gap-2">
-                <label className="flex items-center gap-1 text-xs cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={activeVariant.useAI}
-                    onChange={(e) => {
-                      this.updateVariant(activeVariantIndex, {
-                        useAI: e.target.checked,
-                      })
-                    }}
-                  />
+                <button
+                  type="button"
+                  onClick={() => {
+                    this.updateVariant(activeVariantIndex, {
+                      useAI: !activeVariant.useAI,
+                    })
+                  }}
+                  className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors ${
+                    activeVariant.useAI
+                      ? 'bg-primary/12 text-primary'
+                      : 'bg-muted text-muted-foreground hover:bg-accent'
+                  }`}
+                >
                   IA
-                </label>
+                </button>
                 {variants.length > 1 && (
                   <button
                     type="button"
                     onClick={() => {
                       this.removeVariant(activeVariantIndex)
                     }}
-                    className="text-xs text-destructive hover:opacity-80"
+                    className="w-6 h-6 flex items-center justify-center text-sm rounded-lg text-destructive bg-destructive/8 hover:bg-destructive/16 transition-colors"
+                    title="Remover variante"
                   >
                     ×
                   </button>
@@ -633,7 +638,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
               <div key={tplIdx} className="relative mt-2">
                 <div className="flex items-center gap-1 mb-1">
                   <span className="text-[10px] text-muted-foreground font-medium">
-                    Msg {tplIdx + 1}
+                    {t('msg_label')} {tplIdx + 1}
                   </span>
                   {arr.length > 1 && (
                     <button
@@ -645,8 +650,8 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                           template: templates[0] ?? '',
                         })
                       }}
-                      className="text-[10px] text-destructive hover:opacity-80 ml-auto"
-                      title="Remover mensagem"
+                      className="w-5 h-5 flex items-center justify-center text-xs rounded-md text-destructive bg-destructive/8 hover:bg-destructive/16 transition-colors ml-auto"
+                      title={t('remove_message')}
                     >
                       ×
                     </button>
@@ -667,8 +672,8 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                   className="w-full bg-muted text-foreground border border-input p-2 rounded-lg text-sm focus:shadow-equal focus:shadow-ring focus:outline-none transition-shadow placeholder:text-muted-foreground"
                   placeholder={
                     activeVariant.useAI
-                      ? `Msg ${tplIdx + 1}: Instruções para a IA...`
-                      : `Msg ${tplIdx + 1}: Template com {variáveis}...`
+                      ? `${t('msg_label')} ${tplIdx + 1}: ${t('ai_instructions_placeholder')}`
+                      : `${t('msg_label')} ${tplIdx + 1}: ${t('template_placeholder')}`
                   }
                 />
               </div>
@@ -679,9 +684,9 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                 const templates = [...(activeVariant.templates.length > 0 ? activeVariant.templates : [activeVariant.template]), '']
                 this.updateVariant(activeVariantIndex, { templates })
               }}
-              className="mt-1 text-[11px] text-primary hover:underline"
+              className="mt-2 px-3 py-1.5 text-[11px] font-medium text-primary bg-primary/8 hover:bg-primary/16 rounded-lg transition-colors"
             >
-              + Adicionar mensagem
+              {t('add_message')}
             </button>
 
             {activeVariant.useAI && (
@@ -689,11 +694,11 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                 style={{ cursor: 'default' }}
                 title={
                   aiConfig.provider === 'none'
-                    ? 'Configure um provider de IA em Configurações > IA'
+                    ? t('configure_ai_provider')
                     : !aiConfig.apiKey
-                      ? 'Adicione uma API Key em Configurações > IA'
+                      ? t('add_api_key')
                       : leads.length === 0
-                        ? 'Adicione contatos primeiro'
+                        ? t('add_contacts_first')
                         : undefined
                 }
               >
@@ -704,7 +709,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                   style={aiPreviewLoading || leads.length === 0 || aiConfig.provider === 'none' ? { pointerEvents: 'none' } : undefined}
                   className="mt-2 text-xs"
                 >
-                  {aiPreviewLoading ? 'Gerando...' : 'Gerar com IA'}
+                  {aiPreviewLoading ? t('generating') : t('generate_with_ai')}
                 </Button>
               </div>
             )}
@@ -714,11 +719,11 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
         {/* Live Preview */}
         <div className="flex flex-col gap-2">
           <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Preview
+            {t('preview')}
           </div>
 
           <div
-            className="rounded-lg p-3 min-h-[120px] flex flex-col justify-end"
+            className="rounded-lg p-3 min-h-[120px] flex flex-col justify-end gap-2.5"
             style={{
               backgroundColor: '#efeae2',
               backgroundImage:
@@ -739,11 +744,11 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                   onClick={() => {
                     this.handleLeadNav(-1)
                   }}
-                  className="px-2 py-0.5 text-xs bg-accent text-accent-foreground rounded hover:opacity-80"
+                  className="w-7 h-7 flex items-center justify-center text-xs rounded-lg bg-primary/8 text-primary hover:bg-primary/16 transition-colors"
                 >
                   ◀
                 </button>
-                <span className="text-xs text-muted-foreground font-mono">
+                <span className="text-xs text-muted-foreground font-mono min-w-[3rem] text-center">
                   {previewLeadIndex + 1} / {leads.length}
                 </span>
                 <button
@@ -751,7 +756,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                   onClick={() => {
                     this.handleLeadNav(1)
                   }}
-                  className="px-2 py-0.5 text-xs bg-accent text-accent-foreground rounded hover:opacity-80"
+                  className="w-7 h-7 flex items-center justify-center text-xs rounded-lg bg-primary/8 text-primary hover:bg-primary/16 transition-colors"
                 >
                   ▶
                 </button>
@@ -761,25 +766,25 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                 <div className="bg-muted rounded-lg p-2 text-xs grid grid-cols-2 gap-x-2 gap-y-0.5">
                   {previewLead.nome_fantasia && (
                     <>
-                      <span className="text-muted-foreground">Nome:</span>
+                      <span className="text-muted-foreground">{t('name')}:</span>
                       <span className="font-medium truncate">{previewLead.nome_fantasia}</span>
                     </>
                   )}
                   {previewLead.decisor && (
                     <>
-                      <span className="text-muted-foreground">Decisor:</span>
+                      <span className="text-muted-foreground">{t('decision_maker')}:</span>
                       <span className="font-medium truncate">{previewLead.decisor}</span>
                     </>
                   )}
                   {previewLead.segmento && (
                     <>
-                      <span className="text-muted-foreground">Segmento:</span>
+                      <span className="text-muted-foreground">{t('segment')}:</span>
                       <span className="truncate">{previewLead.segmento}</span>
                     </>
                   )}
                   {previewLead.cidade && (
                     <>
-                      <span className="text-muted-foreground">Cidade:</span>
+                      <span className="text-muted-foreground">{t('city')}:</span>
                       <span className="truncate">
                         {previewLead.cidade}
                         {previewLead.uf ? `/${previewLead.uf}` : ''}
@@ -788,7 +793,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                   )}
                   {previewLead.telefone && (
                     <>
-                      <span className="text-muted-foreground">Tel:</span>
+                      <span className="text-muted-foreground">{t('phone_abbr')}:</span>
                       <span className="font-mono">{previewLead.telefone}</span>
                     </>
                   )}
@@ -799,7 +804,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
 
           {leads.length === 0 && (
             <div className="text-center text-xs text-muted-foreground py-2">
-              Importe contatos para ver o preview
+              {t('import_contacts_preview')}
             </div>
           )}
         </div>
@@ -820,7 +825,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
               }
               className="text-xs w-full"
             >
-              Iniciar Campanha
+              {t('start_campaign')}
             </Button>
           </span>
           <Button
@@ -829,7 +834,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
             disabled={variants.every((v) => v.templates.every((t) => !t.trim()))}
             className="text-xs"
           >
-            Salvar
+            {t('save')}
           </Button>
           <Button
             variant="secondary"
@@ -839,13 +844,12 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
             }
             className="text-xs"
           >
-            {fullPreviewLoading ? '...' : 'Preview'}
+            {fullPreviewLoading ? '...' : t('preview')}
           </Button>
         </div>
         <div className="text-center">
           <span className="text-[10px] text-muted-foreground">
-            {leads.length} contatos · {variants.length} variante
-            {variants.length > 1 ? 's' : ''}
+            {leads.length} {t('contacts')} · {variants.length} {variants.length > 1 ? t('variants_count_plural') : t('variants_count')}
           </span>
         </div>
       </div>

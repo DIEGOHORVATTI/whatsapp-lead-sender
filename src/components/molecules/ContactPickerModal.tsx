@@ -2,6 +2,7 @@ import { Component } from 'react'
 import type { Lead, LeadMeta } from '../../types/Lead'
 import { LEAD_FIELDS } from '../../types/Lead'
 import campaignStorage from '../../utils/CampaignStorage'
+import { t } from '../../utils/i18n'
 import Button from '../atoms/Button'
 import { ControlSelect } from '../atoms/ControlFactory'
 
@@ -118,7 +119,7 @@ export default class ContactPickerModal extends Component<
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div className="bg-card border border-border rounded-lg shadow-xl w-[95%] max-w-2xl max-h-[85vh] flex flex-col">
           <div className="flex items-center justify-between p-3 border-b border-border">
-            <h3 className="text-sm font-semibold">Selecionar Contatos Salvos</h3>
+            <h3 className="text-sm font-semibold">{t('select_saved_contacts')}</h3>
             <button
               type="button"
               onClick={onClose}
@@ -129,10 +130,10 @@ export default class ContactPickerModal extends Component<
           </div>
 
           {loading ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">Carregando...</div>
+            <div className="py-12 text-center text-sm text-muted-foreground">{t('loading')}</div>
           ) : this.state.leads.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
-              Nenhum contato salvo. Importe um CSV primeiro.
+              {t('no_contacts_import_csv')}
             </div>
           ) : (
             <>
@@ -141,7 +142,7 @@ export default class ContactPickerModal extends Component<
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
-                    placeholder="Buscar..."
+                    placeholder={t('search')}
                     value={search}
                     onChange={(e) => {
                       this.setState({ search: e.target.value })
@@ -149,8 +150,7 @@ export default class ContactPickerModal extends Component<
                     className="flex-1 px-2 py-1.5 text-xs border border-input rounded-lg bg-muted text-foreground placeholder:text-muted-foreground"
                   />
                   <Button variant="light" onClick={this.toggleAll} className="text-xs">
-                    {filtered.every((l) => selectedIds.has(l.id)) ? 'Desmarcar' : 'Selecionar'}{' '}
-                    todos
+                    {filtered.every((l) => selectedIds.has(l.id)) ? t('deselect_all') : t('select_all')}
                   </Button>
                 </div>
 
@@ -169,7 +169,7 @@ export default class ContactPickerModal extends Component<
                         }}
                         className="text-xs"
                       >
-                        <option value="">{label}: Todos</option>
+                        <option value="">{`${label}: ${t('all')}`}</option>
                         {values.map((v) => (
                           <option key={v} value={v}>
                             {v}
@@ -216,11 +216,11 @@ export default class ContactPickerModal extends Component<
                   <thead className="bg-muted sticky top-0">
                     <tr>
                       <th className="p-1.5 w-8"></th>
-                      <th className="p-1.5 text-left">Nome</th>
-                      <th className="p-1.5 text-left">Decisor</th>
-                      <th className="p-1.5 text-left">Segmento</th>
-                      <th className="p-1.5 text-left">Cidade</th>
-                      <th className="p-1.5 text-left">Tel</th>
+                      <th className="p-1.5 text-left">{t('name')}</th>
+                      <th className="p-1.5 text-left">{t('decision_maker')}</th>
+                      <th className="p-1.5 text-left">{t('segment')}</th>
+                      <th className="p-1.5 text-left">{t('city')}</th>
+                      <th className="p-1.5 text-left">{t('phone_abbr')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -255,11 +255,11 @@ export default class ContactPickerModal extends Component<
 
           <div className="flex items-center justify-between p-3 border-t border-border">
             <span className="text-xs text-muted-foreground">
-              {selectedIds.size} de {this.state.leads.length} selecionados
+              {selectedIds.size} {t('of')} {this.state.leads.length} {t('selected')}
             </span>
             <div className="flex gap-2">
               <Button variant="light" onClick={onClose} className="text-xs">
-                Cancelar
+                {t('cancel')}
               </Button>
               <Button
                 variant="primary"
@@ -267,7 +267,7 @@ export default class ContactPickerModal extends Component<
                 disabled={selectedIds.size === 0}
                 className="text-xs"
               >
-                Selecionar {selectedIds.size} contatos
+                {`${t('select')} ${selectedIds.size} ${t('contacts')}`}
               </Button>
             </div>
           </div>

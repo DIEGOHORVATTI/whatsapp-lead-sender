@@ -3,6 +3,7 @@ import Button from '../atoms/Button'
 import { ControlInput, ControlSelect } from '../atoms/ControlFactory'
 import Box from '../molecules/Box'
 import { type Message } from 'types/Message'
+import { t } from '../../utils/i18n'
 
 interface ButtonState {
   id: number
@@ -29,29 +30,6 @@ export default class MessageButtonsForm extends Component<
       buttons: [],
     }
   }
-
-  messageButtonsFormTitle = chrome.i18n.getMessage('messageButtonsFormTitle')
-  addButtonLabel = chrome.i18n.getMessage('addButtonLabel')
-  importantNoteMessageButtonsForm = chrome.i18n.getMessage('importantNoteMessageButtonsForm')
-  listTitleNoteMessageButtonsForm = chrome.i18n.getMessage('listTitleNoteMessageButtonsForm')
-  firstListItemNoteMessageButtonsForm = chrome.i18n.getMessage(
-    'firstListItemNoteMessageButtonsForm',
-    ['<strong>', '</strong>']
-  )
-  secondListItemNoteMessageButtonsForm = chrome.i18n.getMessage(
-    'secondListItemNoteMessageButtonsForm',
-    ['<strong>', '</strong>']
-  )
-  thirdListItemNoteMessageButtonsForm = chrome.i18n.getMessage(
-    'thirdListItemNoteMessageButtonsForm',
-    ['<strong>', '</strong>']
-  )
-  typeLabelMessageButtonsForm = chrome.i18n.getMessage('typeLabelMessageButtonsForm')
-  valueLabelMessageButtonsForm = chrome.i18n.getMessage('valueLabelMessageButtonsForm')
-  textLabelMessageButtonsForm = chrome.i18n.getMessage('textLabelMessageButtonsForm')
-  urlTypeMessageButtonsForm = chrome.i18n.getMessage('urlTypeMessageButtonsForm')
-  phoneNumberTypeMessageButtonsForm = chrome.i18n.getMessage('phoneNumberTypeMessageButtonsForm')
-  idTypeMessageButtonsForm = chrome.i18n.getMessage('idTypeMessageButtonsForm')
 
   override componentDidMount() {
     chrome.storage.local.get(({ buttons = [] }: Pick<Message, 'buttons'>) => {
@@ -217,34 +195,34 @@ export default class MessageButtonsForm extends Component<
     return (
       <Box
         className={this.props.className}
-        title={this.messageButtonsFormTitle}
+        title={t('buttons_title')}
         headerButtons={
           buttons.length < 3 && (
             <Button variant="light" onClick={this.handleAddButton}>
-              {this.addButtonLabel}
+              {t('add')}
             </Button>
           )
         }
         footer={
           <>
             <p className="text-red-600 dark:text-red-400 font-bold mb-1">
-              {this.importantNoteMessageButtonsForm}
+              {t('important_note_buttons')}
             </p>
-            <p>{this.listTitleNoteMessageButtonsForm}</p>
+            <p>{t('button_types_title')}</p>
             <ul className="list-disc ml-8">
               <li
                 dangerouslySetInnerHTML={{
-                  __html: this.firstListItemNoteMessageButtonsForm,
+                  __html: t('button_url_desc'),
                 }}
               />
               <li
                 dangerouslySetInnerHTML={{
-                  __html: this.secondListItemNoteMessageButtonsForm,
+                  __html: t('button_phone_desc'),
                 }}
               />
               <li
                 dangerouslySetInnerHTML={{
-                  __html: this.thirdListItemNoteMessageButtonsForm,
+                  __html: t('button_id_desc'),
                 }}
               />
             </ul>
@@ -256,9 +234,9 @@ export default class MessageButtonsForm extends Component<
             <thead>
               <tr className="text-left font-bold">
                 <th className="px-4 py-2"></th>
-                <th className="px-4 py-2 text-center">{this.typeLabelMessageButtonsForm}</th>
-                <th className="px-4 py-2 text-center">{this.valueLabelMessageButtonsForm}</th>
-                <th className="px-4 py-2 text-center">{this.textLabelMessageButtonsForm}</th>
+                <th className="px-4 py-2 text-center">{t('type')}</th>
+                <th className="px-4 py-2 text-center">{t('content')}</th>
+                <th className="px-4 py-2 text-center">{t('text')}</th>
                 <th className="px-4 py-2 text-center"></th>
               </tr>
             </thead>
@@ -286,9 +264,9 @@ export default class MessageButtonsForm extends Component<
                         this.handleTypeChange(event, button.id)
                       }}
                     >
-                      <option value="url">{this.urlTypeMessageButtonsForm}</option>
-                      <option value="phoneNumber">{this.phoneNumberTypeMessageButtonsForm}</option>
-                      <option value="id">{this.idTypeMessageButtonsForm}</option>
+                      <option value="url">{t('button_type_url')}</option>
+                      <option value="phoneNumber">{t('button_type_phone')}</option>
+                      <option value="id">{t('button_type_id')}</option>
                     </ControlSelect>
                   </td>
                   <td className="border px-4 py-2">

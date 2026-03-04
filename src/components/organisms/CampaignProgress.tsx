@@ -2,6 +2,7 @@ import { Component } from 'react'
 import type { Campaign, CampaignResult } from '../../types/Campaign'
 import { exportCampaignResults, downloadCSV } from '../../utils/csvExporter'
 import CountdownBar from '../molecules/CountdownBar'
+import { t } from '../../utils/i18n'
 
 interface CampaignProgressProps {
   campaign: Campaign
@@ -94,23 +95,23 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
               onClick={onBack}
               className="text-xs text-primary hover:underline shrink-0"
             >
-              ← Voltar
+              {'← '}{t('back')}
             </button>
           )}
           <h2 className="text-sm font-medium truncate flex-1">{campaign.name}</h2>
           {isFinished && (
             <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/15 text-primary">
-              Resumo
+              {t('summary')}
             </span>
           )}
           {isRunning && !isPaused && (
             <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-success/15 text-success animate-pulse">
-              Em execução
+              {t('status_running')}
             </span>
           )}
           {isPaused && (
             <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-warning/15 text-warning">
-              Pausada
+              {t('status_paused')}
             </span>
           )}
         </div>
@@ -120,7 +121,7 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
           <div className="flex items-start gap-2 p-2.5 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300">
             <span className="text-base leading-none shrink-0 mt-0.5">&#x26A0;&#xFE0F;</span>
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium">Campanha pausada</span>
+              <span className="text-xs font-medium">{t('campaign_paused')}</span>
               <span className="text-[11px] leading-snug opacity-90">{campaign.pauseReason}</span>
             </div>
           </div>
@@ -150,44 +151,44 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
         <div className="grid grid-cols-4 gap-1.5 text-center">
           <div className="bg-secondary-lighter/20 rounded p-1.5">
             <div className="text-lg font-bold text-primary">{total}</div>
-            <div className="text-[10px] text-muted-foreground">Total</div>
+            <div className="text-[10px] text-muted-foreground">{t('total')}</div>
           </div>
           <div className="bg-green-50 dark:bg-green-900/30 rounded p-1.5">
             <div className="text-lg font-bold text-green-600 dark:text-green-400">{sent}</div>
-            <div className="text-[10px] text-muted-foreground">Enviadas</div>
+            <div className="text-[10px] text-muted-foreground">{t('sent')}</div>
           </div>
           <div className="bg-red-50 dark:bg-red-900/30 rounded p-1.5">
             <div className="text-lg font-bold text-red-600 dark:text-red-400">{failed}</div>
-            <div className="text-[10px] text-muted-foreground">Falhas</div>
+            <div className="text-[10px] text-muted-foreground">{t('failures')}</div>
           </div>
           <div className="bg-yellow-50 dark:bg-yellow-900/30 rounded p-1.5">
             <div className="text-lg font-bold text-yellow-600 dark:text-yellow-400">{pending}</div>
-            <div className="text-[10px] text-muted-foreground">Pendentes</div>
+            <div className="text-[10px] text-muted-foreground">{t('pending')}</div>
           </div>
         </div>
 
         {/* KPIs */}
         <div className="border border-border rounded p-2.5">
-          <h3 className="text-xs font-medium mb-2">KPIs</h3>
+          <h3 className="text-xs font-medium mb-2">{t('kpis')}</h3>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span className="text-muted-foreground">Entrega</span>
+              <span className="text-muted-foreground">{t('delivery')}</span>
               <span className="float-right font-medium text-green-600 dark:text-green-400">
                 {deliveryRate.toFixed(1)}%
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground">Falha</span>
+              <span className="text-muted-foreground">{t('failure')}</span>
               <span className="float-right font-medium text-red-600 dark:text-red-400">
                 {failureRate.toFixed(1)}%
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground">Velocidade</span>
+              <span className="text-muted-foreground">{t('speed')}</span>
               <span className="float-right font-medium">{msgsPerMin.toFixed(1)} msg/min</span>
             </div>
             <div>
-              <span className="text-muted-foreground">ETA</span>
+              <span className="text-muted-foreground">{t('eta')}</span>
               <span className="float-right font-medium">
                 {etaMinutes > 0
                   ? etaMinutes >= 60
@@ -197,7 +198,7 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
               </span>
             </div>
             <div className="col-span-2">
-              <span className="text-muted-foreground">Tempo decorrido</span>
+              <span className="text-muted-foreground">{t('elapsed_time')}</span>
               <span className="float-right font-medium">{elapsedStr}</span>
             </div>
           </div>
@@ -206,7 +207,7 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
         {/* A/B Variant Stats */}
         <div className="border border-border rounded p-2.5">
           <h3 className="text-xs font-medium mb-2">
-            {campaign.variants.length > 1 ? 'A/B Testing' : 'Variante'}
+            {campaign.variants.length > 1 ? t('ab_testing') : t('variant')}
           </h3>
           <div className="flex flex-col gap-2">
             {variantStats.map((v) => (
@@ -216,12 +217,12 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
                     {v.name}
                     {variantStats.length > 1 && v.id === bestVariantId && v.sent > 0 && (
                       <span className="text-[9px] px-1 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 rounded">
-                        melhor
+                        {t('best')}
                       </span>
                     )}
                   </span>
                   <span className="text-muted-foreground">
-                    {v.rate.toFixed(0)}% · {v.sent} env · {v.failed} falha
+                    {v.rate.toFixed(0)}% · {v.sent} {t('sent_abbr')} · {v.failed} {t('failure_abbr')}
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-accent rounded overflow-hidden">
@@ -242,9 +243,9 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
           <table className="w-full text-[10px]">
             <thead className="bg-muted sticky top-0">
               <tr>
-                <th className="p-1.5 text-left">Contato</th>
-                <th className="p-1.5 text-left">Var.</th>
-                <th className="p-1.5 text-left">Status</th>
+                <th className="p-1.5 text-left">{t('contact')}</th>
+                <th className="p-1.5 text-left">{t('var_abbr')}</th>
+                <th className="p-1.5 text-left">{t('status')}</th>
               </tr>
             </thead>
             <tbody>
@@ -268,7 +269,7 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
                               : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400'
                         }`}
                       >
-                        {r.status === 'sent' ? 'OK' : r.status === 'failed' ? 'Falha' : 'Pulada'}
+                        {r.status === 'sent' ? t('ok') : r.status === 'failed' ? t('failed') : t('skipped')}
                       </span>
                     </td>
                   </tr>
@@ -285,7 +286,7 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
               onClick={onPause}
               className="px-3 py-1.5 text-xs font-medium bg-yellow-500 text-white rounded hover:opacity-90"
             >
-              Pausar
+              {t('pause')}
             </button>
           )}
           {isPaused && (
@@ -294,7 +295,7 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
               onClick={onResume}
               className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded hover:opacity-90"
             >
-              Retomar
+              {t('resume')}
             </button>
           )}
           {isRunning && (
@@ -303,7 +304,7 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
               onClick={onStop}
               className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded hover:opacity-90"
             >
-              Parar
+              {t('stop')}
             </button>
           )}
           {!isRunning && !isPaused && (
@@ -312,7 +313,7 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
               onClick={onBack}
               className="px-3 py-1.5 text-xs font-medium bg-muted text-foreground rounded hover:opacity-90"
             >
-              Voltar
+              {t('back')}
             </button>
           )}
           <button
@@ -321,7 +322,7 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
             disabled={sent + failed === 0}
             className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded hover:opacity-90 disabled:opacity-50 ml-auto"
           >
-            Exportar CSV
+            {t('export_csv')}
           </button>
         </div>
       </div>

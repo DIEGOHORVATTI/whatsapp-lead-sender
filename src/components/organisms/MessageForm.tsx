@@ -1,4 +1,5 @@
 import { type ChangeEvent, Component, createRef } from 'react'
+import { t } from '../../utils/i18n'
 import Button from '../atoms/Button'
 import { ControlTextArea } from '../atoms/ControlFactory'
 import Box from '../molecules/Box'
@@ -12,7 +13,7 @@ export default class MessageForm extends Component<
 > {
   constructor(props: { className?: string }) {
     super(props)
-    this.defaultMessage = chrome.i18n.getMessage('defaultMessage')
+    this.defaultMessage = t('default_message')
     this.state = {
       message: this.defaultMessage,
       attachment: undefined,
@@ -22,13 +23,13 @@ export default class MessageForm extends Component<
 
   fileRef = createRef<HTMLInputElement>()
   defaultMessage: string
-  titleMessageForm = chrome.i18n.getMessage('titleMessageForm')
-  attachmentLabelMessageForm = chrome.i18n.getMessage('attachmentLabelMessageForm')
-  cleanButtonLabel = chrome.i18n.getMessage('cleanButtonLabel')
-  footerLabelMessageForm = chrome.i18n.getMessage('footerLabelMessageForm')
-  footerSuggestionMessageForm = chrome.i18n.getMessage('footerSuggestionMessageForm')
-  delayLabelMessageForm = chrome.i18n.getMessage('delayLabelMessageForm')
-  countryCodePrefixMessageForm = chrome.i18n.getMessage('countryCodePrefixMessageForm')
+  titleMessageForm = t('message_form_title')
+  attachmentLabelMessageForm = t('attachment_label')
+  cleanButtonLabel = t('clean')
+  footerLabelMessageForm = t('message_form_footer')
+  footerSuggestionMessageForm = t('message_form_suggestion')
+  delayLabelMessageForm = t('delay_label')
+  countryCodePrefixMessageForm = t('country_code_prefix_label')
 
   override componentDidMount() {
     chrome.storage.local.get(

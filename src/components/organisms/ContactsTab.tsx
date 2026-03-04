@@ -2,6 +2,7 @@ import { Component } from 'react'
 import type { Lead, LeadMeta } from '../../types/Lead'
 import { LEAD_FIELDS } from '../../types/Lead'
 import campaignStorage from '../../utils/CampaignStorage'
+import { t } from '../../utils/i18n'
 import Button from '../atoms/Button'
 import { ControlSelect } from '../atoms/ControlFactory'
 
@@ -110,7 +111,7 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
     if (loading) {
       return (
         <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-          Carregando contatos...
+          {t('loading_contacts')}
         </div>
       )
     }
@@ -120,10 +121,10 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
         {/* KPIs */}
         <div className="grid grid-cols-4 gap-2">
           {[
-            { label: 'Contatos', value: this.state.leads.length },
-            { label: 'Enviadas', value: totalSent },
-            { label: 'Respostas', value: totalResponses },
-            { label: 'Campanhas', value: campaignSet.size },
+            { label: t('contacts_label'), value: this.state.leads.length },
+            { label: t('sent'), value: totalSent },
+            { label: t('responses'), value: totalResponses },
+            { label: t('campaigns'), value: campaignSet.size },
           ].map(({ label, value }) => (
             <div key={label} className="bg-muted rounded-lg p-2 text-center">
               <div className="text-lg font-bold text-foreground">{value}</div>
@@ -136,7 +137,7 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
         <div className="flex items-center gap-2">
           <input
             type="text"
-            placeholder="Buscar contatos..."
+            placeholder={t('search_contacts')}
             value={search}
             onChange={(e) => {
               this.setState({ search: e.target.value })
@@ -150,11 +151,11 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
             }}
             className="text-xs"
           >
-            Filtros {activeFilters.length > 0 ? `(${String(activeFilters.length)})` : ''}
+            {t('filters')} {activeFilters.length > 0 ? `(${String(activeFilters.length)})` : ''}
           </Button>
           {selectedIds.size > 0 && (
             <Button variant="danger" onClick={() => void this.handleDelete()} className="text-xs">
-              Excluir ({selectedIds.size})
+              {t('delete')} ({selectedIds.size})
             </Button>
           )}
         </div>
@@ -192,7 +193,7 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
               }}
               className="text-[10px] text-muted-foreground hover:text-foreground underline"
             >
-              Limpar todos
+              {t('clear_all')}
             </button>
           </div>
         )}
@@ -214,7 +215,7 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
                     }}
                     className="text-xs"
                   >
-                    <option value="">Todos</option>
+                    <option value="">{t('all')}</option>
                     {values.map((v) => (
                       <option key={v} value={v}>
                         {v}
@@ -229,7 +230,7 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
 
         {/* Info */}
         <div className="text-xs text-muted-foreground">
-          {filtered.length} contatos
+          {filtered.length} {t('contacts')}
           {filtered.length !== this.state.leads.length
             ? ` (de ${String(this.state.leads.length)})`
             : ''}
@@ -239,8 +240,8 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
         {filtered.length === 0 ? (
           <div className="text-center py-8 text-sm text-muted-foreground">
             {this.state.leads.length === 0
-              ? 'Nenhum contato salvo. Importe um CSV na aba Campanhas.'
-              : 'Nenhum contato encontrado com os filtros atuais.'}
+              ? t('no_contacts_saved')
+              : t('no_contacts_filtered')}
           </div>
         ) : (
           <div className="overflow-auto max-h-[50vh] border border-border rounded-lg">
@@ -248,13 +249,13 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
               <thead className="bg-muted sticky top-0">
                 <tr>
                   <th className="p-1.5 w-8"></th>
-                  <th className="p-1.5 text-left">Nome</th>
-                  <th className="p-1.5 text-left">Decisor</th>
-                  <th className="p-1.5 text-left">Segmento</th>
-                  <th className="p-1.5 text-left">Cidade</th>
-                  <th className="p-1.5 text-left">Tel</th>
-                  <th className="p-1.5 text-center">Env</th>
-                  <th className="p-1.5 text-center">Resp</th>
+                  <th className="p-1.5 text-left">{t('name')}</th>
+                  <th className="p-1.5 text-left">{t('decision_maker')}</th>
+                  <th className="p-1.5 text-left">{t('segment')}</th>
+                  <th className="p-1.5 text-left">{t('city')}</th>
+                  <th className="p-1.5 text-left">{t('phone_abbr')}</th>
+                  <th className="p-1.5 text-center">{t('sent_abbr_table')}</th>
+                  <th className="p-1.5 text-center">{t('response_abbr')}</th>
                 </tr>
               </thead>
               <tbody>

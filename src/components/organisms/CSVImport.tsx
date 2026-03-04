@@ -1,4 +1,5 @@
 import { Component, createRef, type RefObject } from 'react'
+import { t } from '../../utils/i18n'
 import type { Lead } from '../../types/Lead'
 import { LEAD_FIELDS } from '../../types/Lead'
 import { autoMapColumns, mapRowsToLeads, parseCSV } from '../../utils/csvParser'
@@ -52,7 +53,7 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
         const text = reader.result as string
         const { headers, rows } = parseCSV(text)
         if (headers.length === 0) {
-          this.setState({ error: 'CSV vazio ou inválido' })
+          this.setState({ error: t('csv_empty_invalid') })
           return
         }
         const mapping = autoMapColumns(headers)
@@ -69,7 +70,7 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
           error: undefined,
         })
       } catch {
-        this.setState({ error: 'Erro ao ler CSV' })
+        this.setState({ error: t('csv_read_error') })
       }
     }
     reader.readAsText(file, 'utf-8')
@@ -144,7 +145,7 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
     const { step, headers, mapping, selectedRows, search, error } = this.state
 
     return (
-      <Box title="Importar CSV de Leads">
+      <Box title={t('import_csv_leads')}>
         <div className="p-4 flex flex-col gap-4">
           {error && (
             <div className="p-2 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded text-sm">
@@ -165,13 +166,13 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
               />
               {step !== 'upload' && (
                 <span className="text-sm text-green-600 dark:text-green-400">
-                  {this.state.allRows.length} linhas no arquivo
+                  {this.state.allRows.length} {t('lines_in_file')}
                 </span>
               )}
             </div>
             {step !== 'upload' && (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500">Linhas:</span>
+                <span className="text-xs text-slate-500">{t('lines')}</span>
                 <input
                   type="number"
                   min="0"
@@ -183,7 +184,7 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
                   placeholder="0"
                   className="w-20 px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-900"
                 />
-                <span className="text-xs text-slate-500">até</span>
+                <span className="text-xs text-slate-500">{t('to')}</span>
                 <input
                   type="number"
                   min="0"
@@ -196,10 +197,10 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
                   className="w-20 px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-900"
                 />
                 <Button variant="light" onClick={this.applyRange} className="text-xs">
-                  Aplicar
+                  {t('apply')}
                 </Button>
                 <span className="text-xs text-slate-500">
-                  ({this.state.rows.length} selecionadas)
+                  ({this.state.rows.length} {t('selected_lines')})
                 </span>
               </div>
             )}
@@ -209,7 +210,7 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
           {(step === 'map' || step === 'preview') && (
             <>
               <div className="border border-slate-200 dark:border-slate-700 rounded p-3">
-                <h3 className="text-sm font-semibold mb-2">Mapeamento de Colunas</h3>
+                <h3 className="text-sm font-semibold mb-2">{t('column_mapping')}</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {headers.map((h) => (
                     <div key={h} className="flex items-center gap-2">
@@ -223,7 +224,7 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
                         }}
                         className="text-xs"
                       >
-                        <option value="">— ignorar —</option>
+                        <option value="">{t('ignore')}</option>
                         {LEAD_FIELDS.map(({ key, label }) => (
                           <option key={key} value={key}>
                             {label}
@@ -241,7 +242,7 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
                     }}
                     className="text-sm"
                   >
-                    Pré-visualizar
+                    {t('preview_btn')}
                   </Button>
                 </div>
               </div>
@@ -254,7 +255,7 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Buscar..."
+                  placeholder={t('search')}
                   value={search}
                   onChange={(e) => {
                     this.setState({ search: e.target.value })
@@ -263,21 +264,21 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
                 />
                 <Button variant="light" onClick={this.toggleAll} className="text-xs">
                   {selectedRows.size === this.state.rows.length
-                    ? 'Desmarcar todos'
-                    : 'Selecionar todos'}
+                    ? t('deselect_all')
+                    : t('select_all')}
                 </Button>
-                <span className="text-xs text-slate-500">{selectedRows.size} selecionados</span>
+                <span className="text-xs text-slate-500">{selectedRows.size} {t('selected')}</span>
               </div>
               <div className="overflow-auto max-h-64 border border-slate-200 dark:border-slate-700 rounded">
                 <table className="w-full text-xs">
                   <thead className="bg-slate-100 dark:bg-slate-800 sticky top-0">
                     <tr>
                       <th className="p-1 w-8"></th>
-                      <th className="p-1 text-left">Fantasia</th>
-                      <th className="p-1 text-left">Decisor</th>
-                      <th className="p-1 text-left">Segmento</th>
-                      <th className="p-1 text-left">Telefone</th>
-                      <th className="p-1 text-left">Cidade</th>
+                      <th className="p-1 text-left">{t('fantasy_name')}</th>
+                      <th className="p-1 text-left">{t('decision_maker')}</th>
+                      <th className="p-1 text-left">{t('segment')}</th>
+                      <th className="p-1 text-left">{t('phone')}</th>
+                      <th className="p-1 text-left">{t('city')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -322,7 +323,7 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
                 disabled={selectedRows.size === 0}
                 className="text-sm"
               >
-                Importar {selectedRows.size} leads
+                {t('import_leads')} {selectedRows.size} leads
               </Button>
             </>
           )}

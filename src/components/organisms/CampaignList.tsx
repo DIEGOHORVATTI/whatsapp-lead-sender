@@ -2,6 +2,7 @@ import { Component } from 'react'
 import type { Campaign } from '../../types/Campaign'
 import campaignStorage from '../../utils/CampaignStorage'
 import Button from '../atoms/Button'
+import { t } from '../../utils/i18n'
 
 interface CampaignListProps {
   onNewCampaign: () => void
@@ -15,21 +16,14 @@ interface CampaignListState {
   loading: boolean
 }
 
-const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  draft: { label: 'Rascunho', className: 'bg-muted text-muted-foreground' },
-  running: {
-    label: 'Em execução',
-    className: 'bg-success/15 text-success',
-  },
-  paused: {
-    label: 'Pausada',
-    className: 'bg-warning/15 text-warning',
-  },
-  completed: {
-    label: 'Concluída',
-    className: 'bg-primary/15 text-primary',
-  },
-  preview: { label: 'Preview', className: 'bg-muted text-muted-foreground' },
+function getStatusLabels(): Record<string, { label: string; className: string }> {
+  return {
+    draft: { label: t('status_draft'), className: 'bg-muted text-muted-foreground' },
+    running: { label: t('status_running'), className: 'bg-success/15 text-success' },
+    paused: { label: t('status_paused'), className: 'bg-warning/15 text-warning' },
+    completed: { label: t('status_completed'), className: 'bg-primary/15 text-primary' },
+    preview: { label: t('status_preview'), className: 'bg-muted text-muted-foreground' },
+  }
 }
 
 export default class CampaignList extends Component<CampaignListProps, CampaignListState> {
@@ -72,7 +66,7 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
     const copy: Campaign = {
       ...campaign,
       id: crypto.randomUUID(),
-      name: `${campaign.name} (cópia)`,
+      name: `${campaign.name} (${t('copy_suffix')})`,
       status: 'draft',
       results: [],
       pauseReason: undefined,
@@ -96,18 +90,18 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
     return (
       <div className="flex flex-col gap-3 p-3">
         <Button variant="primary" onClick={onNewCampaign} className="text-sm w-full">
-          + Nova Campanha
+          {t('new_campaign')}
         </Button>
 
         {loading && (
           <div className="text-center py-8 text-sm text-muted-foreground">
-            Carregando campanhas...
+            {t('loading_campaigns')}
           </div>
         )}
 
         {!loading && campaigns.length === 0 && (
           <div className="text-center py-8 text-sm text-muted-foreground">
-            Nenhuma campanha salva. Crie sua primeira campanha!
+            {t('no_campaigns_saved')}
           </div>
         )}
 
@@ -116,8 +110,8 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
             const sent = c.results.filter((r) => r.status === 'sent').length
             const failed = c.results.filter((r) => r.status === 'failed').length
             const total = c.leadIds.length
-            const statusInfo = STATUS_LABELS[c.status] ??
-              STATUS_LABELS['draft'] ?? {
+            const statusInfo = getStatusLabels()[c.status] ??
+              getStatusLabels()['draft'] ?? {
                 label: c.status,
                 className: '',
               }
@@ -142,7 +136,7 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
                       type="button"
                       onClick={(e) => this.handleEdit(e, c)}
                       className="text-xs text-primary hover:opacity-80"
-                      title="Editar campanha"
+                      title={t('edit_campaign')}
                     >
                       ✎
                     </button>
@@ -150,7 +144,7 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
                       type="button"
                       onClick={(e) => void this.handleCopy(e, c)}
                       className="text-xs text-primary hover:opacity-80"
-                      title="Copiar campanha"
+                      title={t('copy_campaign')}
                     >
                       ⧉
                     </button>
@@ -158,19 +152,19 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
                       type="button"
                       onClick={(e) => void this.handleDelete(e, c.id)}
                       className="text-xs text-destructive hover:opacity-80"
-                      title="Excluir campanha"
+                      title={t('delete_campaign')}
                     >
                       ×
                     </button>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                  <span>{total} contatos</span>
+                  <span>{total} {t('contacts')}</span>
                   {sent > 0 && (
-                    <span className="text-green-600 dark:text-green-400">{sent} enviadas</span>
+                    <span className="text-green-600 dark:text-green-400">{sent} {t('sent_label')}</span>
                   )}
                   {failed > 0 && (
-                    <span className="text-red-600 dark:text-red-400">{failed} falhas</span>
+                    <span className="text-red-600 dark:text-red-400">{failed} {t('failures_label')}</span>
                   )}
                   <span className="ml-auto">
                     {new Date(c.createdAt).toLocaleDateString('pt-BR')}

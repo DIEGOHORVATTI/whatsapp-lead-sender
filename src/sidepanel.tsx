@@ -14,6 +14,8 @@ import { normalizePhone } from 'types/Lead'
 import AsyncChromeMessageManager from 'utils/AsyncChromeMessageManager'
 import campaignManager from 'utils/CampaignManager'
 import campaignStorage from 'utils/CampaignStorage'
+import { t, I18nProvider } from 'utils/i18n'
+import LanguageSelector from 'components/molecules/LanguageSelector'
 
 const messageManager = new AsyncChromeMessageManager('sidepanel')
 
@@ -53,7 +55,7 @@ class ProgressOverview extends Component<ProgressOverviewProps, ProgressOverview
     if (loading) {
       return (
         <div className="flex items-center justify-center h-full">
-          <p className="text-xs text-muted-foreground">Carregando...</p>
+          <p className="text-xs text-muted-foreground">{t('loading')}</p>
         </div>
       )
     }
@@ -62,13 +64,13 @@ class ProgressOverview extends Component<ProgressOverviewProps, ProgressOverview
       return (
         <div className="flex flex-col items-center justify-center h-full text-center gap-3 py-12">
           <div className="text-3xl opacity-30">📊</div>
-          <p className="text-sm text-muted-foreground">Nenhuma campanha com progresso</p>
+          <p className="text-sm text-muted-foreground">{t('no_campaigns_progress')}</p>
           <button
             type="button"
             onClick={this.props.onNewCampaign}
             className="text-xs text-primary hover:underline"
           >
-            Criar Campanha
+            {t('create_campaign')}
           </button>
         </div>
       )
@@ -77,7 +79,7 @@ class ProgressOverview extends Component<ProgressOverviewProps, ProgressOverview
     return (
       <div className="flex flex-col gap-2 p-3">
         <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Campanhas com progresso
+          {t('campaigns_with_progress')}
         </div>
         {campaigns.map((c) => {
           const sent = c.results.filter((r) => r.status === 'sent').length
@@ -85,10 +87,10 @@ class ProgressOverview extends Component<ProgressOverviewProps, ProgressOverview
           const total = c.leadIds.length
           const progress = total > 0 ? ((sent + failed) / total) * 100 : 0
           const statusLabel =
-            c.status === 'completed' ? 'Concluída'
-            : c.status === 'paused' ? 'Pausada'
-            : c.status === 'running' ? 'Em execução'
-            : 'Rascunho'
+            c.status === 'completed' ? t('status_completed')
+            : c.status === 'paused' ? t('status_paused')
+            : c.status === 'running' ? t('status_running')
+            : t('status_draft')
           const statusClass =
             c.status === 'completed' ? 'bg-primary/15 text-primary'
             : c.status === 'paused' ? 'bg-warning/15 text-warning'
@@ -115,9 +117,9 @@ class ProgressOverview extends Component<ProgressOverviewProps, ProgressOverview
               </div>
               <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                 <span>{Math.round(progress)}%</span>
-                <span className="text-success">{sent} env</span>
-                {failed > 0 && <span className="text-destructive">{failed} falha</span>}
-                <span className="ml-auto">{total} contatos</span>
+                <span className="text-success">{sent} {t('sent_abbr')}</span>
+                {failed > 0 && <span className="text-destructive">{failed} {t('failure_abbr')}</span>}
+                <span className="ml-auto">{total} {t('contacts')}</span>
               </div>
             </div>
           )
@@ -140,7 +142,7 @@ campaignManager.setSendFunction(async (contact: string, message: string) => {
     }),
     new Promise<never>((_, reject) => {
       setTimeout(() => {
-        reject(new Error('Timeout: WhatsApp não respondeu (60s)'))
+        reject(new Error(t('timeout_error')))
       }, 60_000)
     }),
   ])
@@ -328,23 +330,30 @@ class SidePanel extends Component<unknown, SidePanelState> {
     const hasActiveCampaign = isRunning || (campaign && results.length > 0)
 
     const tabs = [
-      { key: 'progress', label: 'Progresso', badge: isRunning },
-      { key: 'campaigns', label: 'Campanhas' },
-      { key: 'contacts', label: 'Contatos' },
-      { key: 'logs', label: 'Logs' },
+      { key: 'progress', label: t('tab_progress'), badge: isRunning },
+      { key: 'campaigns', label: t('tab_campaigns') },
+      { key: 'contacts', label: t('tab_contacts') },
+      { key: 'logs', label: t('tab_logs') },
     ]
 
     return (
       <div className="flex flex-col h-screen">
-        {/* Tab bar */}
-        <ScrollableTabBar
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={(key) => {
-            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-            this.setState({ activeTab: key as Tab })
-          }}
-        />
+        {/* Tab bar + Language selector */}
+        <div className="flex items-center">
+          <div className="flex-1">
+            <ScrollableTabBar
+              tabs={tabs}
+              activeTab={activeTab}
+              onTabChange={(key) => {
+                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+                this.setState({ activeTab: key as Tab })
+              }}
+            />
+          </div>
+          <div className="px-2 shrink-0">
+            <LanguageSelector />
+          </div>
+        </div>
 
         {/* Tab content */}
         <div className="flex-1 overflow-y-auto">
@@ -353,9 +362,9 @@ class SidePanel extends Component<unknown, SidePanelState> {
             <div className="flex flex-col items-center justify-center h-full text-center gap-4 py-16 p-3">
               <div className="text-4xl opacity-40">📱</div>
               <div>
-                <p className="text-sm font-medium text-foreground">WhatsApp Web não encontrado</p>
+                <p className="text-sm font-medium text-foreground">{t('whatsapp_not_found')}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Abra o WhatsApp Web em uma aba para usar a extensão
+                  {t('whatsapp_open_tab')}
                 </p>
               </div>
               <button
@@ -367,12 +376,12 @@ class SidePanel extends Component<unknown, SidePanelState> {
                 }}
                 className="px-4 py-2 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
               >
-                Abrir WhatsApp Web
+                {t('whatsapp_open')}
               </button>
             </div>
           ) : checkingWhatsApp ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-xs text-muted-foreground">Verificando...</p>
+              <p className="text-xs text-muted-foreground">{t('checking')}</p>
             </div>
           ) : (
             <>
@@ -381,14 +390,14 @@ class SidePanel extends Component<unknown, SidePanelState> {
                 <div className="mx-3 mt-2 flex items-start gap-2 p-2.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300">
                   <span className="text-base leading-none shrink-0 mt-0.5">&#x1F6A8;</span>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-medium">WPP não inicializou</span>
+                    <span className="text-xs font-medium">{t('wpp_not_initialized')}</span>
                     <span className="text-[10px] leading-snug opacity-90">
                       {wppStatus.error ??
                         (!wppStatus.injected
-                          ? 'injectLoader() falhou. Recarregue o WhatsApp Web.'
+                          ? t('wpp_inject_failed')
                           : !wppStatus.authenticated
-                            ? 'WhatsApp não autenticado. Faça login no WhatsApp Web.'
-                            : 'Aguardando inicialização... se persistir, recarregue a página.')}
+                            ? t('wpp_not_authenticated')
+                            : t('wpp_waiting'))}
                     </span>
                     <span className="text-[9px] opacity-60 font-mono">
                       injected: {String(wppStatus.injected)} | ready: {String(wppStatus.ready)} |
@@ -402,7 +411,7 @@ class SidePanel extends Component<unknown, SidePanelState> {
                 <div className="mx-3 mt-2 flex items-start gap-2 p-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300">
                   <span className="text-sm leading-none shrink-0">&#x26A0;&#xFE0F;</span>
                   <span className="text-[11px]">
-                    WhatsApp não autenticado. Faça login no WhatsApp Web.
+                    {t('wpp_not_authenticated')}
                   </span>
                 </div>
               )}
@@ -449,7 +458,7 @@ class SidePanel extends Component<unknown, SidePanelState> {
                         }}
                         className="text-xs text-primary hover:underline"
                       >
-                        ← Voltar para lista
+                        {t('back_to_list')}
                       </button>
                     </div>
                     <UnifiedEditor
@@ -508,4 +517,8 @@ class SidePanel extends Component<unknown, SidePanelState> {
   }
 }
 
-createRoot(document.getElementById('root') ?? document.body).render(<SidePanel />)
+createRoot(document.getElementById('root') ?? document.body).render(
+  <I18nProvider>
+    <SidePanel />
+  </I18nProvider>
+)

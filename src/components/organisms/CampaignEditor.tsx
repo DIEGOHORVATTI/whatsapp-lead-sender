@@ -1,4 +1,5 @@
 import { Component, createRef, type RefObject } from 'react'
+import { t } from '../../utils/i18n'
 import type { AIConfig } from '../../types/AIConfig'
 import { AI_MODELS, DEFAULT_AI_CONFIG } from '../../types/AIConfig'
 import type {
@@ -39,11 +40,11 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
   constructor(props: CampaignEditorProps) {
     super(props)
     this.state = {
-      name: `Campanha ${new Date().toLocaleDateString('pt-BR')}`,
+      name: `${t('campaign')} ${new Date().toLocaleDateString()}`,
       variants: [
         {
           id: crypto.randomUUID(),
-          name: 'Variante A',
+          name: t('variant_a'),
           template:
             'Olá {decisor}! Vi que a {nome_fantasia} atua em {segmento} em {cidade}. Temos uma solução que reduz faltas de pacientes em até 70%. Posso te mostrar?',
           templates: ['Olá {decisor}! Vi que a {nome_fantasia} atua em {segmento} em {cidade}. Temos uma solução que reduz faltas de pacientes em até 70%. Posso te mostrar?'],
@@ -76,7 +77,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
         ...variants,
         {
           id: crypto.randomUUID(),
-          name: `Variante ${letter}`,
+          name: `${t('variant')} ${letter}`,
           template: '',
           templates: [''],
           useAI: false,
@@ -152,7 +153,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
     const { name, variants, timing, batch, aiConfig, activeTab, previewing } = this.state
 
     return (
-      <Box title={`Campanha — ${String(leads.length)} leads`} className="max-w-3xl">
+      <Box title={`${t('campaign')} — ${String(leads.length)} leads`} className="max-w-3xl">
         <div className="p-4 flex flex-col gap-4">
           {/* Campaign Name */}
           <ControlInput
@@ -160,18 +161,18 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
             onChange={(e) => {
               this.setState({ name: e.target.value })
             }}
-            placeholder="Nome da campanha"
+            placeholder={t('campaign_name_placeholder')}
           />
 
           {/* Tabs */}
           <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
             {(
               [
-                ['variants', 'Mensagens'],
-                ['ai', 'IA'],
-                ['timing', 'Timing'],
-                ['batch', 'Lotes'],
-              ] as const
+                ['variants', t('messages')],
+                ['ai', t('ai')],
+                ['timing', t('timing')],
+                ['batch', t('batches')],
+              ] as [CampaignEditorState['activeTab'], string][]
             ).map(([key, label]) => (
               <button
                 key={key}
@@ -218,7 +219,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
                             })
                           }}
                         />
-                        Usar IA
+                        {t('use_ai')}
                       </label>
                       {variants.length > 1 && (
                         <Button
@@ -228,7 +229,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
                           }}
                           className="text-xs px-2 py-1"
                         >
-                          Remover
+                          {t('remove')}
                         </Button>
                       )}
                     </div>
@@ -248,8 +249,8 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
                     className="w-full flex-auto bg-slate-100 dark:bg-slate-900 border border-slate-400 dark:border-slate-600 p-1 rounded-lg transition-shadow ease-in-out duration-150 focus:shadow-equal focus:shadow-blue-800 dark:focus:shadow-blue-200 focus:outline-none mt-2 text-sm"
                     placeholder={
                       v.useAI
-                        ? 'Instruções para a IA (pode usar {variáveis})...'
-                        : 'Template da mensagem com {variáveis}...'
+                        ? t('ai_instructions_placeholder')
+                        : t('template_placeholder')
                     }
                   />
                 </div>
@@ -260,7 +261,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
                   onClick={this.addVariant}
                   className="text-sm self-start"
                 >
-                  + Adicionar Variante (A/B Test)
+                  {t('add_variant_ab')}
                 </Button>
               )}
             </div>
@@ -270,7 +271,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
           {activeTab === 'ai' && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
-                <label className="text-sm w-24">Provider:</label>
+                <label className="text-sm w-24">{t('provider')}</label>
                 <ControlSelect
                   value={aiConfig.provider}
                   onChange={(e) => {
@@ -282,15 +283,15 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
                     })
                   }}
                 >
-                  <option value="none">Desativado</option>
-                  <option value="claude">Claude (Anthropic)</option>
+                  <option value="none">{t('disabled')}</option>
+                  <option value="claude">{t('claude_anthropic')}</option>
                   <option value="openai">OpenAI</option>
                 </ControlSelect>
               </div>
               {aiConfig.provider !== 'none' && (
                 <>
                   <div className="flex items-center gap-2">
-                    <label className="text-sm w-24">API Key:</label>
+                    <label className="text-sm w-24">{t('api_key')}</label>
                     <ControlInput
                       type="password"
                       value={aiConfig.apiKey}
@@ -304,7 +305,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <label className="text-sm w-24">Modelo:</label>
+                    <label className="text-sm w-24">{t('model')}</label>
                     <ControlSelect
                       value={aiConfig.model}
                       onChange={(e) => {
@@ -322,7 +323,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
                     </ControlSelect>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm">Prompt base:</label>
+                    <label className="text-sm">{t('base_prompt')}</label>
                     <ControlTextArea
                       value={aiConfig.basePrompt}
                       onChange={(e) => {
@@ -344,8 +345,8 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
           {activeTab === 'timing' && (
             <TimingControls
               config={timing}
-              onChange={(t) => {
-                this.setState({ timing: t })
+              onChange={(tc) => {
+                this.setState({ timing: tc })
               }}
             />
           )}
@@ -354,7 +355,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
           {activeTab === 'batch' && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
-                <label className="text-sm w-40">Msgs por lote:</label>
+                <label className="text-sm w-40">{t('msgs_per_batch')}</label>
                 <ControlInput
                   type="number"
                   min={1}
@@ -381,7 +382,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
                     })
                   }}
                 />
-                Pausar entre lotes (requer resume manual)
+                {t('pause_between_batches')}
               </label>
             </div>
           )}
@@ -393,7 +394,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
               onClick={this.handleStart}
               disabled={leads.length === 0 || variants.every((v) => !v.template.trim())}
             >
-              Iniciar Campanha
+              {t('start_campaign')}
             </Button>
             <Button
               variant="secondary"
@@ -402,7 +403,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
                 leads.length === 0 || variants.every((v) => !v.template.trim()) || previewing
               }
             >
-              {previewing ? 'Gerando...' : 'Preview (Dry Run)'}
+              {previewing ? t('generating') : t('preview_dry_run')}
             </Button>
           </div>
         </div>

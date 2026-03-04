@@ -6,6 +6,7 @@
       "name": "wtf",
       "dependencies": {
         "@wppconnect/wa-js": "3.22.1",
+        "easy-translate-i18n": "^1.1.3",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
       },
@@ -532,6 +533,8 @@
     "domutils": ["domutils@3.2.2", "", { "dependencies": { "dom-serializer": "^2.0.0", "domelementtype": "^2.3.0", "domhandler": "^5.0.3" } }, "sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw=="],
 
     "dunder-proto": ["dunder-proto@1.0.1", "", { "dependencies": { "call-bind-apply-helpers": "^1.0.1", "es-errors": "^1.3.0", "gopd": "^1.2.0" } }, "sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A=="],
+
+    "easy-translate-i18n": ["easy-translate-i18n@1.1.3", "", { "bin": { "easy-translate-i18n": "dist/src/index.js" } }, "sha512-lzE/zal7zVcyZZNh2t70wCR9WeK3SMEH4oyLzTEQIEMPLIdwW1vus/ctNELjiJm+ttQZKbvmchKau1sdrNCs6Q=="],
 
     "electron-to-chromium": ["electron-to-chromium@1.5.307", "", {}, "sha512-5z3uFKBWjiNR44nFcYdkcXjKMbg5KXNdciu7mhTPo9tB7NbqSNP2sSnGR+fqknZSCwKkBN+oxiiajWs4dT6ORg=="],
 

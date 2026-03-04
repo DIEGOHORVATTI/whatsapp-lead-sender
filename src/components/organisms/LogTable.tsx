@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import { t } from '../../utils/i18n'
 import type Log from 'types/Log'
 
 const LOG_COLORS: Record<number, string> = {
@@ -51,10 +52,10 @@ export default class LogTable extends Component<{ className?: string }, { logs: 
       <div className={`flex flex-col gap-2 ${this.props.className ?? ''}`}>
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium">Logs</h2>
+          <h2 className="text-sm font-medium">{t('logs')}</h2>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-muted-foreground">
-              {logs.length} evento{logs.length !== 1 ? 's' : ''}
+              {logs.length} {logs.length !== 1 ? t('events') : t('event')}
             </span>
             {logs.length > 0 && (
               <button
@@ -62,7 +63,7 @@ export default class LogTable extends Component<{ className?: string }, { logs: 
                 onClick={this.handleClear}
                 className="text-[10px] text-destructive hover:underline"
               >
-                Limpar
+                {t('clear')}
               </button>
             )}
           </div>
@@ -72,7 +73,7 @@ export default class LogTable extends Component<{ className?: string }, { logs: 
         {logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center gap-2">
             <div className="text-2xl opacity-30">📋</div>
-            <p className="text-xs text-muted-foreground">Nenhum evento registrado</p>
+            <p className="text-xs text-muted-foreground">{t('no_events_logged')}</p>
           </div>
         ) : (
           <div className="flex flex-col gap-1 max-h-[calc(100vh-120px)] overflow-y-auto">
