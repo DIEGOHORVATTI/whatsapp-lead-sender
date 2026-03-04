@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import type { Campaign } from '../../types/Campaign'
+import campaignManager from '../../utils/CampaignManager'
 import campaignStorage from '../../utils/CampaignStorage'
 import { t } from '../../utils/i18n'
 import Button from '../atoms/Button'
@@ -40,9 +41,10 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
     this.setState({ loading: true })
     const campaigns = await campaignStorage.listCampaigns()
 
-    // Auto-reset stuck "running" campaigns silently
+    // Auto-reset stuck "running" campaigns silently (skip the one actively running)
+    const activeCampaignId = campaignManager.getCampaign()?.id
     for (const c of campaigns) {
-      if (c.status === 'running') {
+      if (c.status === 'running' && c.id !== activeCampaignId) {
         c.status = 'paused'
         c.pauseReason = undefined
         await campaignStorage.saveCampaign(c)

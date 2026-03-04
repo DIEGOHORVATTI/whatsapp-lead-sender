@@ -123,10 +123,10 @@ class CampaignManager {
     let pausedBySchedule = false
     let pausedByLimit = false
 
-    // Resume from where we left off
+    // Resume from where we left off (skip sent, failed, and skipped leads)
     const alreadySent = new Set(
       campaign.results
-        .filter((r) => r.status === 'sent' || r.status === 'skipped')
+        .filter((r) => r.status === 'sent' || r.status === 'skipped' || r.status === 'failed')
         .map((r) => r.leadId)
     )
     const pendingLeads = leads.filter((l) => !alreadySent.has(l.id))
@@ -158,25 +158,30 @@ class CampaignManager {
           await this.emitStatus()
         }
 
-        // Daily limit
+        // Daily limit (global across all campaigns)
         const today = new Date().toISOString().slice(0, 10)
         if (campaign.dailyResetDate !== today) {
           campaign.dailySentCount = 0
           campaign.dailyResetDate = today
         }
-        if (
-          campaign.timing.dailyLimit > 0 &&
-          campaign.dailySentCount >= campaign.timing.dailyLimit
-        ) {
-          pausedByLimit = true
-          campaign.status = 'paused'
-          campaign.pauseReason = `Limite diário atingido (${String(campaign.timing.dailyLimit)} msgs). Retoma amanhã automaticamente ou aumente o limite nas configurações.`
-          addLog(
-            2,
-            `Limite diário atingido (${String(campaign.timing.dailyLimit)}). Campanha pausada.`
-          )
-          await this.emitStatus()
-          break
+        if (campaign.timing.dailyLimit > 0) {
+          // Count messages sent today across ALL campaigns
+          const allCampaigns = await campaignStorage.listCampaigns()
+          const globalSentToday = allCampaigns.reduce((sum, c) => {
+            if (c.dailyResetDate === today) return sum + c.dailySentCount
+            return sum
+          }, 0)
+          if (globalSentToday >= campaign.timing.dailyLimit) {
+            pausedByLimit = true
+            campaign.status = 'paused'
+            campaign.pauseReason = `Limite diário atingido (${String(globalSentToday)}/${String(campaign.timing.dailyLimit)} msgs). Retoma amanhã automaticamente ou aumente o limite nas configurações.`
+            addLog(
+              2,
+              `Limite diário atingido (${String(globalSentToday)}/${String(campaign.timing.dailyLimit)}). Campanha pausada.`
+            )
+            await this.emitStatus()
+            break
+          }
         }
 
         // Schedule check

@@ -24,6 +24,7 @@ const messageManager = new AsyncChromeMessageManager('sidepanel')
 interface ProgressOverviewProps {
   onSelectCampaign: (campaign: Campaign) => void
   onNewCampaign: () => void
+  activeCampaign?: Campaign | null
 }
 
 interface ProgressOverviewState {
@@ -43,7 +44,10 @@ class ProgressOverview extends Component<ProgressOverviewProps, ProgressOverview
 
   private async load() {
     const all = await campaignStorage.listCampaigns()
-    const campaigns = all
+    // Merge live state from active campaign
+    const active = this.props.activeCampaign
+    const merged = active ? all.map((c) => (c.id === active.id ? active : c)) : all
+    const campaigns = merged
       .filter((c) => c.results.length > 0 || c.status === 'running' || c.status === 'paused')
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     this.setState({ campaigns, loading: false })
@@ -223,10 +227,34 @@ class SidePanel extends Component<unknown, SidePanelState> {
         void this.handleIncomingMessage(msg.payload.from)
       }
     })
+
+    // On sidebar close, pause any running campaign so it can be resumed later
+    window.addEventListener('beforeunload', () => {
+      if (this.state.isRunning) {
+        campaignManager.stop()
+      }
+    })
+
+    // Auto-detect paused/running campaigns from storage and show progress
+    void this.detectActiveCampaign()
   }
 
   override componentWillUnmount() {
     clearInterval(this.checkInterval)
+  }
+
+  private async detectActiveCampaign() {
+    const all = await campaignStorage.listCampaigns()
+    const active = all.find((c) => c.status === 'running' || c.status === 'paused')
+    if (active) {
+      this.setState({
+        campaign: active,
+        results: active.results,
+        isPaused: true,
+        isRunning: false,
+        activeTab: 'progress',
+      })
+    }
   }
 
   private async handleIncomingMessage(fromPhone: string) {
@@ -310,8 +338,25 @@ class SidePanel extends Component<unknown, SidePanelState> {
   }
 
   private handleResume = () => {
-    campaignManager.resume()
-    this.setState({ isPaused: false })
+    const { campaign, isRunning } = this.state
+    if (!campaign) return
+
+    // If the campaign manager is actively running (just paused mid-execution), simply resume
+    if (isRunning) {
+      campaignManager.resume()
+      this.setState({ isPaused: false })
+      return
+    }
+
+    // Otherwise, re-start the campaign from where it left off (e.g. opened from list)
+    void this.restartCampaign(campaign)
+  }
+
+  private async restartCampaign(campaign: Campaign) {
+    const leads = await campaignStorage.getLeads(campaign.leadIds)
+    campaign.status = 'running'
+    campaign.pauseReason = undefined
+    this.handleCampaignStart(campaign, leads)
   }
 
   private handleStop = () => {
@@ -445,12 +490,13 @@ class SidePanel extends Component<unknown, SidePanelState> {
                   </div>
                 ) : (
                   <ProgressOverview
+                    activeCampaign={campaign}
                     onSelectCampaign={(c) => {
                       this.setState({
                         campaign: c,
                         results: c.results,
                         isPaused: c.status === 'paused',
-                        isRunning: false,
+                        isRunning: c.status === 'running',
                       })
                     }}
                     onNewCampaign={() => {
@@ -511,7 +557,7 @@ class SidePanel extends Component<unknown, SidePanelState> {
                         campaign: c,
                         results: c.results,
                         isPaused: c.status === 'paused',
-                        isRunning: false,
+                        isRunning: c.status === 'running',
                         activeTab: 'progress',
                       })
                     }}

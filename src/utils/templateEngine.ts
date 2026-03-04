@@ -12,18 +12,35 @@ const TITLE_CASE_FIELDS = new Set([
   'endereco',
 ])
 
+// Virtual variables derived from lead data
+const VIRTUAL_FIELDS: Record<string, (lead: Lead) => string> = {
+  primeiro_nome: (lead) => {
+    const decisor = lead['decisor']
+    if (!decisor) return ''
+    return toTitleCase(String(decisor).trim().split(/\s+/)[0] ?? '')
+  },
+}
+
 /**
  * Replace {variable} placeholders in template with lead data.
  * Missing values become empty string.
  * Text fields are auto-formatted from UPPERCASE to Title Case.
+ * Supports virtual variables like {primeiro_nome} (first name from decisor).
+ * Collapses extra spaces left by empty variables.
  */
 export function replaceVariables(template: string, lead: Lead): string {
-  return template.replace(/\{(\w+)\}/g, (_match: string, key: string) => {
+  const result = template.replace(/\{(\w+)\}/g, (_match: string, key: string) => {
+    // Check virtual fields first
+    const virtualFn = VIRTUAL_FIELDS[key]
+    if (virtualFn) return virtualFn(lead)
+
     const value = lead[key]
     if (value === undefined || value === '') return ''
     if (TITLE_CASE_FIELDS.has(key)) return toTitleCase(String(value))
     return String(value)
   })
+  // Collapse multiple spaces (from empty variables) and trim
+  return result.replace(/ {2,}/g, ' ').trim()
 }
 
 /**
