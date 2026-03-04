@@ -1,240 +1,205 @@
-import type ChromeMessageContentTypes from "types/ChromeMessageContentTypes";
+import type ChromeMessageContentTypes from 'types/ChromeMessageContentTypes'
 
 interface MessageData<K extends keyof ChromeMessageContentTypes> {
-  source: "WTF";
-  type: K;
-  payload: ChromeMessageContentTypes[K]["payload"];
+  source: 'WTF'
+  type: K
+  payload: ChromeMessageContentTypes[K]['payload']
 }
 
 interface MessageDataResponse<K extends keyof ChromeMessageContentTypes> {
-  source: "WTF";
-  type: `${K}_RESPONSE`;
-  payload: ChromeMessageContentTypes[K]["response"];
+  source: 'WTF'
+  type: `${K}_RESPONSE`
+  payload: ChromeMessageContentTypes[K]['response']
 }
 
 type MessageHandler<K extends keyof ChromeMessageContentTypes> = (
-  payload: ChromeMessageContentTypes[K]["payload"],
-) =>
-  | ChromeMessageContentTypes[K]["response"]
-  | Promise<ChromeMessageContentTypes[K]["response"]>;
+  payload: ChromeMessageContentTypes[K]['payload']
+) => ChromeMessageContentTypes[K]['response'] | Promise<ChromeMessageContentTypes[K]['response']>
 
 export default class AsyncChromeMessageManager {
-  constructor(private source: "popup" | "sidepanel" | "contentScript" | "webpage") {
-    if (this.source === "contentScript") {
-      this.forwardMessagesFromWebpageToPopup();
-      this.forwardResponsesFromPopupToWebpage();
+  constructor(private source: 'popup' | 'sidepanel' | 'contentScript' | 'webpage') {
+    if (this.source === 'contentScript') {
+      this.forwardMessagesFromWebpageToPopup()
+      this.forwardResponsesFromPopupToWebpage()
     }
   }
 
-  private forwardMessagesFromWebpageToPopup<
-    K extends keyof ChromeMessageContentTypes,
-  >() {
-    window.addEventListener(
-      "message",
-      (event: Partial<MessageEvent<MessageData<K>>>) => {
-        if (
-          event.source === window &&
-          event.origin === window.location.origin &&
-          event.data?.source === "WTF"
-        ) {
-          void chrome.runtime
-            .sendMessage(event.data)
-            .catch((error: unknown) => {
-              console.error(
-                "WTF.AsyncChromeMessageManager.forwardMessagesFromWebpageToPopup",
-                error,
-                event,
-              );
-            });
-        }
-      },
-    );
+  private forwardMessagesFromWebpageToPopup<K extends keyof ChromeMessageContentTypes>() {
+    window.addEventListener('message', (event: Partial<MessageEvent<MessageData<K>>>) => {
+      if (
+        event.source === window &&
+        event.origin === window.location.origin &&
+        event.data?.source === 'WTF'
+      ) {
+        void chrome.runtime.sendMessage(event.data).catch((error: unknown) => {
+          console.error(
+            'WTF.AsyncChromeMessageManager.forwardMessagesFromWebpageToPopup',
+            error,
+            event
+          )
+        })
+      }
+    })
   }
 
-  private forwardResponsesFromPopupToWebpage<
-    K extends keyof ChromeMessageContentTypes,
-  >() {
+  private forwardResponsesFromPopupToWebpage<K extends keyof ChromeMessageContentTypes>() {
     chrome.runtime.onMessage.addListener((message: Partial<MessageData<K>>) => {
-      if (message.source === "WTF")
-        window.postMessage(message, window.location.origin);
-    });
+      if (message.source === 'WTF') window.postMessage(message, window.location.origin)
+    })
   }
 
   public addHandler<K extends keyof ChromeMessageContentTypes>(
     type: K,
-    handler: MessageHandler<K>,
+    handler: MessageHandler<K>
   ) {
     try {
-      if (this.source !== "webpage") {
-        this.addExtensionMessageHandler(type, handler);
+      if (this.source !== 'webpage') {
+        this.addExtensionMessageHandler(type, handler)
       }
-      if (this.source !== "popup" && this.source !== "sidepanel") {
-        this.addWebpageMessageHandler(type, handler);
+      if (this.source !== 'popup' && this.source !== 'sidepanel') {
+        this.addWebpageMessageHandler(type, handler)
       }
     } catch (error) {
-      console.error("WTF.AsyncChromeMessageManager.addHandler", error);
+      console.error('WTF.AsyncChromeMessageManager.addHandler', error)
     }
   }
 
-  private async webpageMessageResponseHandler<
-    K extends keyof ChromeMessageContentTypes,
-  >(
+  private async webpageMessageResponseHandler<K extends keyof ChromeMessageContentTypes>(
     handler: MessageHandler<K>,
     type: K,
-    payload: ChromeMessageContentTypes[K]["payload"],
+    payload: ChromeMessageContentTypes[K]['payload']
   ) {
     try {
-      const response = await handler(payload);
+      const response = await handler(payload)
       window.postMessage(
-        { source: "WTF", type: `${type}_RESPONSE`, payload: response },
-        window.location.origin,
-      );
+        { source: 'WTF', type: `${type}_RESPONSE`, payload: response },
+        window.location.origin
+      )
     } catch (error) {
       console.error(
         `WTF.AsyncChromeMessageManager.addWebpageMessageHandler ${type}_RESPONSE`,
-        error,
-      );
+        error
+      )
     }
   }
 
   private addWebpageMessageHandler<K extends keyof ChromeMessageContentTypes>(
     type: K,
-    handler: MessageHandler<K>,
+    handler: MessageHandler<K>
   ) {
-    window.addEventListener(
-      "message",
-      (event: Partial<MessageEvent<MessageData<K>>>) => {
-        if (
-          event.source === window &&
-          event.origin === window.location.origin &&
-          event.data?.source === "WTF" &&
-          event.data.type === type
-        ) {
-          void this.webpageMessageResponseHandler(
-            handler,
-            type,
-            event.data.payload,
-          );
-        }
-      },
-    );
+    window.addEventListener('message', (event: Partial<MessageEvent<MessageData<K>>>) => {
+      if (
+        event.source === window &&
+        event.origin === window.location.origin &&
+        event.data?.source === 'WTF' &&
+        event.data.type === type
+      ) {
+        void this.webpageMessageResponseHandler(handler, type, event.data.payload)
+      }
+    })
   }
 
-  private async extensionMessageResponseHandler<
-    K extends keyof ChromeMessageContentTypes,
-  >(
+  private async extensionMessageResponseHandler<K extends keyof ChromeMessageContentTypes>(
     handler: MessageHandler<K>,
     type: K,
-    payload: ChromeMessageContentTypes[K]["payload"],
+    payload: ChromeMessageContentTypes[K]['payload']
   ) {
     try {
-      const response = await handler(payload);
+      const response = await handler(payload)
       await chrome.runtime.sendMessage({
-        source: "WTF",
+        source: 'WTF',
         type: `${type}_RESPONSE`,
         payload: response,
-      });
+      })
     } catch (error) {
       console.error(
         `WTF.AsyncChromeMessageManager.addExtensionMessageHandler ${type}_RESPONSE`,
-        error,
-      );
+        error
+      )
     }
   }
 
   private addExtensionMessageHandler<K extends keyof ChromeMessageContentTypes>(
     type: K,
-    handler: MessageHandler<K>,
+    handler: MessageHandler<K>
   ) {
     chrome.runtime.onMessage.addListener((message: Partial<MessageData<K>>) => {
-      if (message.source === "WTF" && message.type === type)
-        void this.extensionMessageResponseHandler(
-          handler,
-          type,
-          message.payload,
-        );
-    });
+      if (message.source === 'WTF' && message.type === type)
+        void this.extensionMessageResponseHandler(handler, type, message.payload)
+    })
   }
 
   public async sendMessage<K extends keyof ChromeMessageContentTypes>(
     type: K,
-    payload: ChromeMessageContentTypes[K]["payload"],
-  ): Promise<ChromeMessageContentTypes[K]["response"]> {
-    const message: MessageData<K> = { source: "WTF", type, payload };
+    payload: ChromeMessageContentTypes[K]['payload']
+  ): Promise<ChromeMessageContentTypes[K]['response']> {
+    const message: MessageData<K> = { source: 'WTF', type, payload }
 
     return new Promise((resolve, reject) => {
       try {
         const listener = (response?: MessageDataResponse<K>) => {
-          if (
-            response?.source === "WTF" &&
-            response.type === `${type}_RESPONSE`
-          ) {
-            chrome.runtime.onMessage.removeListener(listener);
-            resolve(response.payload);
+          if (response?.source === 'WTF' && response.type === `${type}_RESPONSE`) {
+            chrome.runtime.onMessage.removeListener(listener)
+            resolve(response.payload)
           }
-        };
-
-        if (this.source !== "popup" && this.source !== "sidepanel") {
-          this.sendWebpageMessage(message, listener);
         }
-        if (this.source !== "webpage") {
-          this.sendExtensionMessage(message, listener);
+
+        if (this.source !== 'popup' && this.source !== 'sidepanel') {
+          this.sendWebpageMessage(message, listener)
+        }
+        if (this.source !== 'webpage') {
+          this.sendExtensionMessage(message, listener)
         }
       } catch (error: unknown) {
-        console.error("WTF.AsyncChromeMessageManager.sendMessage", error);
+        console.error('WTF.AsyncChromeMessageManager.sendMessage', error)
         // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
-        reject(error);
+        reject(error)
       }
-    });
+    })
   }
 
   private sendWebpageMessage<K extends keyof ChromeMessageContentTypes>(
     message: MessageData<K>,
-    listener: (response: MessageDataResponse<K>) => void,
+    listener: (response: MessageDataResponse<K>) => void
   ) {
-    window.postMessage(message, window.location.origin);
-    const responseListener = (
-      event: Partial<MessageEvent<MessageDataResponse<K>>>,
-    ) => {
+    window.postMessage(message, window.location.origin)
+    const responseListener = (event: Partial<MessageEvent<MessageDataResponse<K>>>) => {
       if (
         event.source === window &&
         event.origin === window.location.origin &&
-        event.data?.source === "WTF" &&
+        event.data?.source === 'WTF' &&
         event.data.type === `${message.type}_RESPONSE`
       ) {
-        listener(event.data);
-        window.removeEventListener("message", responseListener);
+        listener(event.data)
+        window.removeEventListener('message', responseListener)
       }
-    };
-    window.addEventListener("message", responseListener);
+    }
+    window.addEventListener('message', responseListener)
   }
 
   private sendExtensionMessage<K extends keyof ChromeMessageContentTypes>(
     message: MessageData<K>,
-    listener: (response: MessageDataResponse<K>) => void,
+    listener: (response: MessageDataResponse<K>) => void
   ) {
-    chrome.runtime.onMessage.addListener(listener);
+    chrome.runtime.onMessage.addListener(listener)
 
-    if (this.source === "popup") {
+    if (this.source === 'popup') {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]?.id) {
-          void chrome.tabs.sendMessage(tabs[0].id, message);
+          void chrome.tabs.sendMessage(tabs[0].id, message)
         }
-      });
-    } else if (this.source === "sidepanel") {
+      })
+    } else if (this.source === 'sidepanel') {
       // Side panel can be open alongside any tab, so target WhatsApp tab directly
-      chrome.tabs.query({ url: "https://web.whatsapp.com/*" }, (tabs) => {
+      chrome.tabs.query({ url: 'https://web.whatsapp.com/*' }, (tabs) => {
         if (tabs[0]?.id) {
-          void chrome.tabs.sendMessage(tabs[0].id, message);
+          void chrome.tabs.sendMessage(tabs[0].id, message)
         }
-      });
-    } else if (this.source === "contentScript") {
+      })
+    } else if (this.source === 'contentScript') {
       void chrome.runtime.sendMessage(message).catch((error: unknown) => {
-        console.error(
-          "WTF.AsyncChromeMessageManager.sendExtensionMessage",
-          error,
-        );
-      });
+        console.error('WTF.AsyncChromeMessageManager.sendExtensionMessage', error)
+      })
     }
   }
 }

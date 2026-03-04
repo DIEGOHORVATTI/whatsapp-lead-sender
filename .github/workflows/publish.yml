@@ -19,7 +19,7 @@ jobs:
 
       - name: Use Node.js
         uses: actions/setup-node@v4
-      
+
       - name: Run with Node.js + yarn pnp
         run: |
           corepack enable

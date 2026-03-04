@@ -1,20 +1,20 @@
-import { type ChangeEvent, Component, type DragEvent } from "react";
-import Button from "../atoms/Button";
-import { ControlInput, ControlSelect } from "../atoms/ControlFactory";
-import Box from "../molecules/Box";
-import { type Message } from "types/Message";
+import { type ChangeEvent, Component, type DragEvent } from 'react'
+import Button from '../atoms/Button'
+import { ControlInput, ControlSelect } from '../atoms/ControlFactory'
+import Box from '../molecules/Box'
+import { type Message } from 'types/Message'
 
 interface ButtonState {
-  id: number;
-  type: string;
-  value: string;
-  text: string;
+  id: number
+  type: string
+  value: string
+  text: string
 }
 
 interface MessageButtonsFormState {
-  buttons: ButtonState[];
-  draggedIndex: number | null;
-  dropIndex: number | null;
+  buttons: ButtonState[]
+  draggedIndex: number | null
+  dropIndex: number | null
 }
 
 export default class MessageButtonsForm extends Component<
@@ -22,85 +22,68 @@ export default class MessageButtonsForm extends Component<
   MessageButtonsFormState
 > {
   constructor(props: { className?: string }) {
-    super(props);
+    super(props)
     this.state = {
       draggedIndex: null,
       dropIndex: null,
       buttons: [],
-    };
+    }
   }
 
-  messageButtonsFormTitle = chrome.i18n.getMessage("messageButtonsFormTitle");
-  addButtonLabel = chrome.i18n.getMessage("addButtonLabel");
-  importantNoteMessageButtonsForm = chrome.i18n.getMessage(
-    "importantNoteMessageButtonsForm",
-  );
-  listTitleNoteMessageButtonsForm = chrome.i18n.getMessage(
-    "listTitleNoteMessageButtonsForm",
-  );
+  messageButtonsFormTitle = chrome.i18n.getMessage('messageButtonsFormTitle')
+  addButtonLabel = chrome.i18n.getMessage('addButtonLabel')
+  importantNoteMessageButtonsForm = chrome.i18n.getMessage('importantNoteMessageButtonsForm')
+  listTitleNoteMessageButtonsForm = chrome.i18n.getMessage('listTitleNoteMessageButtonsForm')
   firstListItemNoteMessageButtonsForm = chrome.i18n.getMessage(
-    "firstListItemNoteMessageButtonsForm",
-    ["<strong>", "</strong>"],
-  );
+    'firstListItemNoteMessageButtonsForm',
+    ['<strong>', '</strong>']
+  )
   secondListItemNoteMessageButtonsForm = chrome.i18n.getMessage(
-    "secondListItemNoteMessageButtonsForm",
-    ["<strong>", "</strong>"],
-  );
+    'secondListItemNoteMessageButtonsForm',
+    ['<strong>', '</strong>']
+  )
   thirdListItemNoteMessageButtonsForm = chrome.i18n.getMessage(
-    "thirdListItemNoteMessageButtonsForm",
-    ["<strong>", "</strong>"],
-  );
-  typeLabelMessageButtonsForm = chrome.i18n.getMessage(
-    "typeLabelMessageButtonsForm",
-  );
-  valueLabelMessageButtonsForm = chrome.i18n.getMessage(
-    "valueLabelMessageButtonsForm",
-  );
-  textLabelMessageButtonsForm = chrome.i18n.getMessage(
-    "textLabelMessageButtonsForm",
-  );
-  urlTypeMessageButtonsForm = chrome.i18n.getMessage(
-    "urlTypeMessageButtonsForm",
-  );
-  phoneNumberTypeMessageButtonsForm = chrome.i18n.getMessage(
-    "phoneNumberTypeMessageButtonsForm",
-  );
-  idTypeMessageButtonsForm = chrome.i18n.getMessage("idTypeMessageButtonsForm");
+    'thirdListItemNoteMessageButtonsForm',
+    ['<strong>', '</strong>']
+  )
+  typeLabelMessageButtonsForm = chrome.i18n.getMessage('typeLabelMessageButtonsForm')
+  valueLabelMessageButtonsForm = chrome.i18n.getMessage('valueLabelMessageButtonsForm')
+  textLabelMessageButtonsForm = chrome.i18n.getMessage('textLabelMessageButtonsForm')
+  urlTypeMessageButtonsForm = chrome.i18n.getMessage('urlTypeMessageButtonsForm')
+  phoneNumberTypeMessageButtonsForm = chrome.i18n.getMessage('phoneNumberTypeMessageButtonsForm')
+  idTypeMessageButtonsForm = chrome.i18n.getMessage('idTypeMessageButtonsForm')
 
   override componentDidMount() {
-    chrome.storage.local.get(({ buttons = [] }: Pick<Message, "buttons">) => {
+    chrome.storage.local.get(({ buttons = [] }: Pick<Message, 'buttons'>) => {
       this.setState({
         buttons: buttons.map((button): ButtonState => {
-          const [type = ""] = Object.keys(button).filter(
-              (key) => key !== "text",
-            ),
+          const [type = ''] = Object.keys(button).filter((key) => key !== 'text'),
             // @ts-expect-error Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'MessageButtonsTypes'. No index signature with a parameter of type 'string' was found on type 'MessageButtonsTypes'.
-            value: string | number = button[type]; // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+            value: string | number = button[type] // eslint-disable-line @typescript-eslint/no-unsafe-assignment
 
           return {
-            id:
-              type === "id" ? Number(value) : Math.floor(Math.random() * 1000),
+            id: type === 'id' ? Number(value) : Math.floor(Math.random() * 1000),
             type,
             value: value.toString(),
             text: button.text,
-          };
+          }
         }),
-      });
-    });
+      })
+    })
   }
 
   compareArrays = (arr1: ButtonState[], arr2: ButtonState[]): boolean => {
     // Check if arrays have different lengths
     if (arr1.length !== arr2.length) {
-      return false;
+      return false
     }
     // Check if each object in arr1 has a corresponding object in arr2
     for (let i = 0; i < arr1.length; i++) {
-      const obj1 = arr1[i];
-      const obj2 = arr2[i];
+      const obj1 = arr1[i]
+      const obj2 = arr2[i]
       if (!obj2) {
         // If obj2 is undefined, there is no matching object in arr2
-        return false;
+        return false
       }
       // Check if properties of obj1 and obj2 are the same
       if (
@@ -109,127 +92,127 @@ export default class MessageButtonsForm extends Component<
         obj1.value !== obj2.value ||
         obj1.text !== obj2.text
       ) {
-        return false;
+        return false
       }
     }
     // If we reach this point, the arrays are equal
-    return true;
-  };
+    return true
+  }
 
   override componentDidUpdate(
     _prevProps: Readonly<{ className?: string }>,
-    prevState: Readonly<MessageButtonsFormState>,
+    prevState: Readonly<MessageButtonsFormState>
   ) {
-    const { buttons } = this.state;
+    const { buttons } = this.state
     if (!this.compareArrays(prevState.buttons, buttons)) {
       void chrome.storage.local.set({
         buttons: buttons.map((button) => ({
           [button.type]: button.value,
           text: button.text,
         })),
-      });
+      })
     }
   }
 
   handleDrag = (event: DragEvent<HTMLTableRowElement>, index: number) => {
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", index.toString());
-    this.setState({ draggedIndex: index });
-  };
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', index.toString())
+    this.setState({ draggedIndex: index })
+  }
 
   handleDragOver = (event: DragEvent<HTMLTableRowElement>, index: number) => {
-    event.preventDefault();
-    this.setState({ dropIndex: index });
-  };
+    event.preventDefault()
+    this.setState({ dropIndex: index })
+  }
 
   handleDrop = (event: DragEvent<HTMLTableRowElement>, index: number) => {
-    event.preventDefault();
-    const sourceIndex = event.dataTransfer.getData("text");
-    const buttons = [...this.state.buttons];
-    const [draggedItem] = buttons.splice(Number(sourceIndex), 1);
-    if (!draggedItem) return;
-    buttons.splice(index, 0, draggedItem);
-    this.setState({ buttons, draggedIndex: null, dropIndex: null });
-  };
+    event.preventDefault()
+    const sourceIndex = event.dataTransfer.getData('text')
+    const buttons = [...this.state.buttons]
+    const [draggedItem] = buttons.splice(Number(sourceIndex), 1)
+    if (!draggedItem) return
+    buttons.splice(index, 0, draggedItem)
+    this.setState({ buttons, draggedIndex: null, dropIndex: null })
+  }
 
   handleTypeChange = (event: ChangeEvent<HTMLSelectElement>, id: number) => {
-    const buttons = [...this.state.buttons];
+    const buttons = [...this.state.buttons]
     this.setState({
       buttons: buttons.map((button) => {
-        if (button.id !== id) return button;
-        const type = event.target.value;
-        let value = button.value || "";
-        if (type === "phoneNumber") {
-          value = value.replace(/\D/g, "");
-        } else if (type === "id") {
-          value = button.id.toString();
+        if (button.id !== id) return button
+        const type = event.target.value
+        let value = button.value || ''
+        if (type === 'phoneNumber') {
+          value = value.replace(/\D/g, '')
+        } else if (type === 'id') {
+          value = button.id.toString()
         }
         return {
           id: button.id || 0,
           type,
           value,
-          text: button.text || "",
-        };
+          text: button.text || '',
+        }
       }),
-    });
-  };
+    })
+  }
 
   handleValueChange = (event: ChangeEvent<HTMLInputElement>, id: number) => {
-    const buttons = [...this.state.buttons];
+    const buttons = [...this.state.buttons]
     this.setState({
       buttons: buttons.map((button) => {
-        if (button.id !== id) return button;
-        let { value } = event.target;
-        if (button.type === "phoneNumber") {
-          value = value.replace(/\D/g, "");
-        } else if (button.type === "id") {
-          value = button.id.toString();
+        if (button.id !== id) return button
+        let { value } = event.target
+        if (button.type === 'phoneNumber') {
+          value = value.replace(/\D/g, '')
+        } else if (button.type === 'id') {
+          value = button.id.toString()
         }
         return {
           id: button.id || 0,
-          type: button.type || "",
+          type: button.type || '',
           value,
-          text: button.text || "",
-        };
+          text: button.text || '',
+        }
       }),
-    });
-  };
+    })
+  }
 
   handleTextChange = (event: ChangeEvent<HTMLInputElement>, id: number) => {
-    const buttons = [...this.state.buttons];
+    const buttons = [...this.state.buttons]
     this.setState({
       buttons: buttons.map((button) => {
-        if (button.id !== id) return button;
+        if (button.id !== id) return button
         return {
           id: button.id || 0,
-          type: button.type || "",
-          value: button.value || "",
+          type: button.type || '',
+          value: button.value || '',
           text: event.target.value,
-        };
+        }
       }),
-    });
-  };
+    })
+  }
 
   handleDeleteButton = (id: number) => {
-    const buttons = [...this.state.buttons];
-    this.setState({ buttons: buttons.filter((button) => button.id !== id) });
-  };
+    const buttons = [...this.state.buttons]
+    this.setState({ buttons: buttons.filter((button) => button.id !== id) })
+  }
 
   handleAddButton = () => {
     const buttons = [
       ...this.state.buttons,
       {
         id: Math.floor(Math.random() * 1000),
-        type: "url",
-        value: "",
-        text: "",
+        type: 'url',
+        value: '',
+        text: '',
       },
-    ];
-    this.setState({ buttons });
-  };
+    ]
+    this.setState({ buttons })
+  }
 
   override render() {
-    const { buttons, draggedIndex, dropIndex } = this.state;
+    const { buttons, draggedIndex, dropIndex } = this.state
 
     return (
       <Box
@@ -273,15 +256,9 @@ export default class MessageButtonsForm extends Component<
             <thead>
               <tr className="text-left font-bold">
                 <th className="px-4 py-2"></th>
-                <th className="px-4 py-2 text-center">
-                  {this.typeLabelMessageButtonsForm}
-                </th>
-                <th className="px-4 py-2 text-center">
-                  {this.valueLabelMessageButtonsForm}
-                </th>
-                <th className="px-4 py-2 text-center">
-                  {this.textLabelMessageButtonsForm}
-                </th>
+                <th className="px-4 py-2 text-center">{this.typeLabelMessageButtonsForm}</th>
+                <th className="px-4 py-2 text-center">{this.valueLabelMessageButtonsForm}</th>
+                <th className="px-4 py-2 text-center">{this.textLabelMessageButtonsForm}</th>
                 <th className="px-4 py-2 text-center"></th>
               </tr>
             </thead>
@@ -291,54 +268,44 @@ export default class MessageButtonsForm extends Component<
                   key={button.id}
                   draggable
                   onDragStart={(event) => {
-                    this.handleDrag(event, index);
+                    this.handleDrag(event, index)
                   }}
                   onDragOver={(event) => {
-                    this.handleDragOver(event, index);
+                    this.handleDragOver(event, index)
                   }}
                   onDrop={(event) => {
-                    this.handleDrop(event, index);
+                    this.handleDrop(event, index)
                   }}
-                  className={`${index === draggedIndex ? "bg-blue-100 dark:bg-blue-900" : ""} ${index === dropIndex ? "border-dashed border-2" : "border"}`}
+                  className={`${index === draggedIndex ? 'bg-blue-100 dark:bg-blue-900' : ''} ${index === dropIndex ? 'border-dashed border-2' : 'border'}`}
                 >
-                  <td className="border px-4 py-2 cursor-move text-center">
-                    ☰
-                  </td>
+                  <td className="border px-4 py-2 cursor-move text-center">☰</td>
                   <td className="border px-4 py-2">
                     <ControlSelect
                       value={button.type}
                       onChange={(event: ChangeEvent<HTMLSelectElement>) => {
-                        this.handleTypeChange(event, button.id);
+                        this.handleTypeChange(event, button.id)
                       }}
                     >
-                      <option value="url">
-                        {this.urlTypeMessageButtonsForm}
-                      </option>
-                      <option value="phoneNumber">
-                        {this.phoneNumberTypeMessageButtonsForm}
-                      </option>
-                      <option value="id">
-                        {this.idTypeMessageButtonsForm}
-                      </option>
+                      <option value="url">{this.urlTypeMessageButtonsForm}</option>
+                      <option value="phoneNumber">{this.phoneNumberTypeMessageButtonsForm}</option>
+                      <option value="id">{this.idTypeMessageButtonsForm}</option>
                     </ControlSelect>
                   </td>
                   <td className="border px-4 py-2">
                     <ControlInput
-                      className={
-                        button.type === "id" ? "bg-transparent border-0" : ""
-                      }
+                      className={button.type === 'id' ? 'bg-transparent border-0' : ''}
                       type={
-                        button.type === "phoneNumber"
-                          ? "tel"
-                          : button.type === "url"
-                            ? "url"
-                            : "text"
+                        button.type === 'phoneNumber'
+                          ? 'tel'
+                          : button.type === 'url'
+                            ? 'url'
+                            : 'text'
                       }
                       value={button.value}
                       onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        this.handleValueChange(event, button.id);
+                        this.handleValueChange(event, button.id)
                       }}
-                      disabled={button.type === "id"}
+                      disabled={button.type === 'id'}
                     />
                   </td>
                   <td className="border px-4 py-2">
@@ -346,7 +313,7 @@ export default class MessageButtonsForm extends Component<
                       type="text"
                       value={button.text}
                       onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        this.handleTextChange(event, button.id);
+                        this.handleTextChange(event, button.id)
                       }}
                     />
                   </td>
@@ -354,7 +321,7 @@ export default class MessageButtonsForm extends Component<
                     <Button
                       className="text-3xl text-red-500 hover:text-red-600 dark:hover:text-red-400 p-0 ring-0"
                       onClick={() => {
-                        this.handleDeleteButton(button.id);
+                        this.handleDeleteButton(button.id)
                       }}
                     >
                       ×
@@ -366,6 +333,6 @@ export default class MessageButtonsForm extends Component<
           </table>
         )}
       </Box>
-    );
+    )
   }
 }

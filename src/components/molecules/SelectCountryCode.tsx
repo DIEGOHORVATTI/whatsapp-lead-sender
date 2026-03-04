@@ -1,160 +1,143 @@
-import { type ChangeEvent, Component, createRef } from "react";
-import ENcountryCodes from "../../countryCodes.en.json";
-import PTcountryCodes from "../../countryCodes.pt.json";
-import { ControlInput } from "../atoms/ControlFactory";
-import type { CountryCode } from "types/CountryCode";
+import { type ChangeEvent, Component, createRef } from 'react'
+import ENcountryCodes from '../../countryCodes.en.json'
+import PTcountryCodes from '../../countryCodes.pt.json'
+import { ControlInput } from '../atoms/ControlFactory'
+import type { CountryCode } from 'types/CountryCode'
 
 export default class SelectCountryCode extends Component<
-  {},
+  Record<string, never>,
   {
-    isOpen: boolean;
-    searchValue: string;
-    selectedValue: CountryCode | undefined;
-    options: CountryCode[];
-    filteredOptions: CountryCode[];
+    isOpen: boolean
+    searchValue: string
+    selectedValue: CountryCode | undefined
+    options: CountryCode[]
+    filteredOptions: CountryCode[]
   }
 > {
   constructor() {
-    super({});
-    this.defaultLabelSelectCountryCode = chrome.i18n.getMessage(
-      "defaultLabelSelectCountryCode"
-    );
-    const defaultOptions: CountryCode[] = [
-        { value: 0, label: this.defaultLabelSelectCountryCode },
-      ];
+    super({})
+    this.defaultLabelSelectCountryCode = chrome.i18n.getMessage('defaultLabelSelectCountryCode')
+    const defaultOptions: CountryCode[] = [{ value: 0, label: this.defaultLabelSelectCountryCode }]
 
-    const language = chrome.i18n.getUILanguage().substring(0, 2);
-    let module = ENcountryCodes;
-    console.log('EN Country Codes:', ENcountryCodes);
-    if (language === "pt") {
-      module = PTcountryCodes;
+    const language = chrome.i18n.getUILanguage().substring(0, 2)
+    let module = ENcountryCodes
+    console.log('EN Country Codes:', ENcountryCodes)
+    if (language === 'pt') {
+      module = PTcountryCodes
     }
-    const options = [...defaultOptions, ...module];
+    const options = [...defaultOptions, ...module]
 
     this.state = {
       isOpen: false,
-      searchValue: "",
+      searchValue: '',
       selectedValue:
-        chrome.i18n.getUILanguage() === "pt_BR"
+        chrome.i18n.getUILanguage() === 'pt_BR'
           ? options.find((option) => option.value === 55)
           : options.find((option) => option.value === 0),
       options,
       filteredOptions: options,
-    };
+    }
   }
 
-  wrapperRef = createRef<HTMLDivElement>();
-  defaultLabelSelectCountryCode: string;
+  wrapperRef = createRef<HTMLDivElement>()
+  defaultLabelSelectCountryCode: string
 
   toggleOpen = () => {
     this.setState((prevState) => ({
       ...prevState,
       isOpen: !prevState.isOpen,
-    }));
-  };
+    }))
+  }
 
   handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
-    const searchValue = e.target.value.toLowerCase();
+    const searchValue = e.target.value.toLowerCase()
     const filteredOptions = this.state.options.filter((option) =>
       option.label.toLowerCase().includes(searchValue)
-    );
+    )
 
-    this.setState({ searchValue, filteredOptions });
-  };
+    this.setState({ searchValue, filteredOptions })
+  }
 
   handleSelect = (selectedValue: CountryCode) => {
     this.setState({
       selectedValue,
       isOpen: false,
-      searchValue: "",
+      searchValue: '',
       filteredOptions: this.state.options,
-    });
-  };
+    })
+  }
 
   handleClickOutside = (e: MouseEvent) => {
-    if (
-      e.target instanceof Node &&
-      !this.wrapperRef.current?.contains(e.target)
-    ) {
-      this.setState({ isOpen: false });
+    if (e.target instanceof Node && !this.wrapperRef.current?.contains(e.target)) {
+      this.setState({ isOpen: false })
     }
-  };
+  }
 
   override componentDidMount() {
-    document.addEventListener("mousedown", this.handleClickOutside);
+    document.addEventListener('mousedown', this.handleClickOutside)
     chrome.storage.local.get(
-      ({
-        prefix = chrome.i18n.getUILanguage() === "pt_BR" ? 55 : 0,
-      }: {
-        prefix: number;
-      }) => {
+      ({ prefix = chrome.i18n.getUILanguage() === 'pt_BR' ? 55 : 0 }: { prefix: number }) => {
         this.setState({
-          selectedValue: this.state.options.find(
-            (option) => option.value === prefix
-          ),
-        });
+          selectedValue: this.state.options.find((option) => option.value === prefix),
+        })
       }
-    );
+    )
   }
 
   override componentDidUpdate(
-    _prevProps: Readonly<{ options: CountryCode[] }>,
+    _prevProps: Readonly<Record<string, never>>,
     prevState: Readonly<{
-      isOpen: boolean;
-      searchValue: string;
-      selectedValue: CountryCode | undefined;
-      options: CountryCode[];
-      filteredOptions: CountryCode[];
+      isOpen: boolean
+      searchValue: string
+      selectedValue: CountryCode | undefined
+      options: CountryCode[]
+      filteredOptions: CountryCode[]
     }>
   ) {
     if (prevState.selectedValue !== this.state.selectedValue) {
       void chrome.storage.local.set({
         prefix: this.state.selectedValue?.value ?? 0,
-      });
+      })
     }
   }
 
   override componentWillUnmount() {
-    document.removeEventListener("mousedown", this.handleClickOutside);
+    document.removeEventListener('mousedown', this.handleClickOutside)
   }
 
   override render() {
-    const { isOpen, searchValue, selectedValue, filteredOptions } = this.state;
+    const { isOpen, searchValue, selectedValue, filteredOptions } = this.state
 
     return (
       <div className="relative select-none" ref={this.wrapperRef}>
         <div
           className={[
-            "w-full",
-            "flex-auto",
-            "bg-slate-100",
-            "dark:bg-slate-900",
-            "border",
-            "border-slate-400",
-            "dark:border-slate-600",
-            "p-2",
-            "rounded-lg",
-            "transition-shadow",
-            "ease-in-out",
-            "duration-150",
-            "focus:shadow-equal",
-            "focus:shadow-blue-800",
-            "dark:focus:shadow-blue-200",
-            "focus:outline-none",
-            "cursor-pointer",
-            "flex",
-            "justify-between",
-            "items-center",
-          ].join(" ")}
+            'w-full',
+            'flex-auto',
+            'bg-slate-100',
+            'dark:bg-slate-900',
+            'border',
+            'border-slate-400',
+            'dark:border-slate-600',
+            'p-2',
+            'rounded-lg',
+            'transition-shadow',
+            'ease-in-out',
+            'duration-150',
+            'focus:shadow-equal',
+            'focus:shadow-blue-800',
+            'dark:focus:shadow-blue-200',
+            'focus:outline-none',
+            'cursor-pointer',
+            'flex',
+            'justify-between',
+            'items-center',
+          ].join(' ')}
           onClick={this.toggleOpen}
         >
-          <span>
-            {selectedValue ? selectedValue.label : "Selecione um Prefixo"}
-          </span>
+          <span>{selectedValue ? selectedValue.label : 'Selecione um Prefixo'}</span>
           <svg
-            className={`transform transition-transform duration-300 ${
-              isOpen ? "rotate-180" : ""
-            }`}
+            className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
             width="16"
             height="16"
             viewBox="0 0 16 16"
@@ -184,9 +167,9 @@ export default class SelectCountryCode extends Component<
                 filteredOptions.map((option, index) => (
                   <li
                     key={index}
-                    className={`p-2 cursor-pointer hover:bg-blue-400 dark:hover:bg-blue-600${selectedValue === option ? " bg-blue-200 dark:bg-blue-800" : ""}`}
+                    className={`p-2 cursor-pointer hover:bg-blue-400 dark:hover:bg-blue-600${selectedValue === option ? ' bg-blue-200 dark:bg-blue-800' : ''}`}
                     onClick={() => {
-                      this.handleSelect(option);
+                      this.handleSelect(option)
                     }}
                   >
                     {option.label}
@@ -201,6 +184,6 @@ export default class SelectCountryCode extends Component<
           </div>
         )}
       </div>
-    );
+    )
   }
 }

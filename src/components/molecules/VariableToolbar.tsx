@@ -1,8 +1,8 @@
-import { Component } from "react";
-import { LEAD_FIELDS } from "../../types/Lead";
+import { Component } from 'react'
+import { LEAD_FIELDS } from '../../types/Lead'
 
 interface VariableToolbarProps {
-  onInsert: (variable: string) => void;
+  onInsert: (variable: string) => void
 }
 
 export default class VariableToolbar extends Component<VariableToolbarProps> {
@@ -17,7 +17,7 @@ export default class VariableToolbar extends Component<VariableToolbarProps> {
             key={key}
             type="button"
             onClick={() => {
-              this.props.onInsert(`{${String(key)}}`);
+              this.props.onInsert(`{${String(key)}}`)
             }}
             className="px-2 py-0.5 text-xs bg-secondary-lighter text-primary rounded hover:opacity-80 transition-colors"
           >
@@ -25,6 +25,6 @@ export default class VariableToolbar extends Component<VariableToolbarProps> {
           </button>
         ))}
       </div>
-    );
+    )
   }
 }

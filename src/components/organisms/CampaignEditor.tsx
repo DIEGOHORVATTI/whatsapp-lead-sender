@@ -1,180 +1,163 @@
-import { Component, createRef, type RefObject } from "react";
-import type { AIConfig } from "../../types/AIConfig";
-import { AI_MODELS, DEFAULT_AI_CONFIG } from "../../types/AIConfig";
+import { Component, createRef, type RefObject } from 'react'
+import type { AIConfig } from '../../types/AIConfig'
+import { AI_MODELS, DEFAULT_AI_CONFIG } from '../../types/AIConfig'
 import type {
   BatchConfig,
   Campaign,
   CampaignResult,
   MessageVariant,
   TimingConfig,
-} from "../../types/Campaign";
-import { DEFAULT_BATCH, DEFAULT_TIMING } from "../../types/Campaign";
-import type { Lead } from "../../types/Lead";
-import campaignManager from "../../utils/CampaignManager";
-import Button from "../atoms/Button";
-import { ControlInput, ControlSelect, ControlTextArea } from "../atoms/ControlFactory";
-import Box from "../molecules/Box";
-import TimingControls from "../molecules/TimingControls";
-import VariableToolbar from "../molecules/VariableToolbar";
+} from '../../types/Campaign'
+import { DEFAULT_BATCH, DEFAULT_TIMING } from '../../types/Campaign'
+import type { Lead } from '../../types/Lead'
+import campaignManager from '../../utils/CampaignManager'
+import Button from '../atoms/Button'
+import { ControlInput, ControlSelect, ControlTextArea } from '../atoms/ControlFactory'
+import Box from '../molecules/Box'
+import TimingControls from '../molecules/TimingControls'
+import VariableToolbar from '../molecules/VariableToolbar'
 
 interface CampaignEditorProps {
-  leads: Lead[];
-  onStart: (campaign: Campaign) => void;
-  onPreview: (results: CampaignResult[]) => void;
+  leads: Lead[]
+  onStart: (campaign: Campaign) => void
+  onPreview: (results: CampaignResult[]) => void
 }
 
 interface CampaignEditorState {
-  name: string;
-  variants: MessageVariant[];
-  timing: TimingConfig;
-  batch: BatchConfig;
-  aiConfig: AIConfig;
-  activeTab: "variants" | "ai" | "timing" | "batch";
-  previewing: boolean;
+  name: string
+  variants: MessageVariant[]
+  timing: TimingConfig
+  batch: BatchConfig
+  aiConfig: AIConfig
+  activeTab: 'variants' | 'ai' | 'timing' | 'batch'
+  previewing: boolean
 }
 
-export default class CampaignEditor extends Component<
-  CampaignEditorProps,
-  CampaignEditorState
-> {
-  private textareaRefs: Record<string, RefObject<HTMLTextAreaElement>> = {};
+export default class CampaignEditor extends Component<CampaignEditorProps, CampaignEditorState> {
+  private textareaRefs: Record<string, RefObject<HTMLTextAreaElement>> = {}
 
   constructor(props: CampaignEditorProps) {
-    super(props);
+    super(props)
     this.state = {
-      name: `Campanha ${new Date().toLocaleDateString("pt-BR")}`,
+      name: `Campanha ${new Date().toLocaleDateString('pt-BR')}`,
       variants: [
         {
           id: crypto.randomUUID(),
-          name: "Variante A",
+          name: 'Variante A',
           template:
-            "Olá {decisor}! Vi que a {nome_fantasia} atua em {segmento} em {cidade}. Temos uma solução que reduz faltas de pacientes em até 70%. Posso te mostrar?",
+            'Olá {decisor}! Vi que a {nome_fantasia} atua em {segmento} em {cidade}. Temos uma solução que reduz faltas de pacientes em até 70%. Posso te mostrar?',
           useAI: false,
         },
       ],
       timing: { ...DEFAULT_TIMING },
       batch: { ...DEFAULT_BATCH },
       aiConfig: { ...DEFAULT_AI_CONFIG },
-      activeTab: "variants",
+      activeTab: 'variants',
       previewing: false,
-    };
+    }
   }
 
   override componentDidMount() {
-    chrome.storage.local.get(["aiConfig"], (data: Record<string, unknown>) => {
-      if (data["aiConfig"]) {
-        this.setState({ aiConfig: data["aiConfig"] as AIConfig });
+    chrome.storage.local.get(['aiConfig'], (data: Record<string, unknown>) => {
+      if (data['aiConfig']) {
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+        this.setState({ aiConfig: data['aiConfig'] as AIConfig })
       }
-    });
+    })
   }
 
   private addVariant = () => {
-    const { variants } = this.state;
-    if (variants.length >= 4) return;
-    const letter = String.fromCharCode(65 + variants.length);
+    const { variants } = this.state
+    if (variants.length >= 4) return
+    const letter = String.fromCharCode(65 + variants.length)
     this.setState({
       variants: [
         ...variants,
         {
           id: crypto.randomUUID(),
           name: `Variante ${letter}`,
-          template: "",
+          template: '',
           useAI: false,
         },
       ],
-    });
-  };
+    })
+  }
 
   private removeVariant = (id: string) => {
     this.setState({
       variants: this.state.variants.filter((v) => v.id !== id),
-    });
-  };
+    })
+  }
 
   private updateVariant = (id: string, updates: Partial<MessageVariant>) => {
     this.setState({
-      variants: this.state.variants.map((v) =>
-        v.id === id ? { ...v, ...updates } : v,
-      ),
-    });
-  };
+      variants: this.state.variants.map((v) => (v.id === id ? { ...v, ...updates } : v)),
+    })
+  }
 
   private insertVariable = (variantId: string, variable: string) => {
-    const ref = this.textareaRefs[variantId];
-    const el = ref?.current;
-    if (!el) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const variant = this.state.variants.find((v) => v.id === variantId);
-    if (!variant) return;
-    const newText =
-      variant.template.slice(0, start) +
-      variable +
-      variant.template.slice(end);
-    this.updateVariant(variantId, { template: newText });
+    const ref = this.textareaRefs[variantId]
+    const el = ref?.current
+    if (!el) return
+    const start = el.selectionStart
+    const end = el.selectionEnd
+    const variant = this.state.variants.find((v) => v.id === variantId)
+    if (!variant) return
+    const newText = variant.template.slice(0, start) + variable + variant.template.slice(end)
+    this.updateVariant(variantId, { template: newText })
     requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(start + variable.length, start + variable.length);
-    });
-  };
+      el.focus()
+      el.setSelectionRange(start + variable.length, start + variable.length)
+    })
+  }
 
   private handleStart = () => {
-    const { name, variants, timing, batch } = this.state;
-    const campaign = campaignManager.createCampaign(
-      name,
-      this.props.leads,
-      variants,
-    );
-    campaign.timing = timing;
-    campaign.batch = batch;
-    campaignManager.setAIConfig(this.state.aiConfig);
-    this.props.onStart(campaign);
-  };
+    const { name, variants, timing, batch } = this.state
+    const campaign = campaignManager.createCampaign(name, this.props.leads, variants)
+    campaign.timing = timing
+    campaign.batch = batch
+    campaignManager.setAIConfig(this.state.aiConfig)
+    this.props.onStart(campaign)
+  }
 
   private handlePreview = async () => {
-    this.setState({ previewing: true });
-    const { name, variants, timing, batch, aiConfig } = this.state;
-    const campaign = campaignManager.createCampaign(
-      name,
-      this.props.leads,
-      variants,
-    );
-    campaign.timing = timing;
-    campaign.batch = batch;
-    campaignManager.setAIConfig(aiConfig);
-    const results = await campaignManager.preview(campaign, this.props.leads);
-    this.setState({ previewing: false });
-    this.props.onPreview(results);
-  };
+    this.setState({ previewing: true })
+    const { name, variants, timing, batch, aiConfig } = this.state
+    const campaign = campaignManager.createCampaign(name, this.props.leads, variants)
+    campaign.timing = timing
+    campaign.batch = batch
+    campaignManager.setAIConfig(aiConfig)
+    const results = await campaignManager.preview(campaign, this.props.leads)
+    this.setState({ previewing: false })
+    this.props.onPreview(results)
+  }
 
   private saveAIConfig = (config: AIConfig) => {
-    this.setState({ aiConfig: config });
-    chrome.storage.local.set({ aiConfig: config });
-  };
+    this.setState({ aiConfig: config })
+    void chrome.storage.local.set({ aiConfig: config })
+  }
 
   private getTextareaRef(id: string): RefObject<HTMLTextAreaElement> {
     if (!this.textareaRefs[id]) {
-      this.textareaRefs[id] = createRef<HTMLTextAreaElement>();
+      this.textareaRefs[id] = createRef<HTMLTextAreaElement>()
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.textareaRefs[id]!;
+    return this.textareaRefs[id]
   }
 
   override render() {
-    const { leads } = this.props;
-    const { name, variants, timing, batch, aiConfig, activeTab, previewing } =
-      this.state;
+    const { leads } = this.props
+    const { name, variants, timing, batch, aiConfig, activeTab, previewing } = this.state
 
     return (
-      <Box
-        title={`Campanha — ${leads.length} leads`}
-        className="max-w-3xl"
-      >
+      <Box title={`Campanha — ${String(leads.length)} leads`} className="max-w-3xl">
         <div className="p-4 flex flex-col gap-4">
           {/* Campaign Name */}
           <ControlInput
             value={name}
-            onChange={(e) => this.setState({ name: e.target.value })}
+            onChange={(e) => {
+              this.setState({ name: e.target.value })
+            }}
             placeholder="Nome da campanha"
           />
 
@@ -182,30 +165,32 @@ export default class CampaignEditor extends Component<
           <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
             {(
               [
-                ["variants", "Mensagens"],
-                ["ai", "IA"],
-                ["timing", "Timing"],
-                ["batch", "Lotes"],
+                ['variants', 'Mensagens'],
+                ['ai', 'IA'],
+                ['timing', 'Timing'],
+                ['batch', 'Lotes'],
               ] as const
             ).map(([key, label]) => (
               <button
                 key={key}
                 type="button"
-                onClick={() => this.setState({ activeTab: key })}
+                onClick={() => {
+                  this.setState({ activeTab: key })
+                }}
                 className={`px-3 py-2 text-sm border-b-2 transition-colors ${
                   activeTab === key
-                    ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-                    : "border-transparent text-slate-500 hover:text-slate-700"
+                    ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
                 {label}
-                {key === "variants" && ` (${variants.length})`}
+                {key === 'variants' && ` (${String(variants.length)})`}
               </button>
             ))}
           </div>
 
           {/* Tab: Variants */}
-          {activeTab === "variants" && (
+          {activeTab === 'variants' && (
             <div className="flex flex-col gap-3">
               {variants.map((v) => (
                 <div
@@ -215,9 +200,9 @@ export default class CampaignEditor extends Component<
                   <div className="flex items-center justify-between mb-2">
                     <ControlInput
                       value={v.name}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         this.updateVariant(v.id, { name: e.target.value })
-                      }
+                      }}
                       className="w-40 text-sm font-medium"
                     />
                     <div className="flex items-center gap-2">
@@ -225,18 +210,20 @@ export default class CampaignEditor extends Component<
                         <input
                           type="checkbox"
                           checked={v.useAI}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             this.updateVariant(v.id, {
                               useAI: e.target.checked,
                             })
-                          }
+                          }}
                         />
                         Usar IA
                       </label>
                       {variants.length > 1 && (
                         <Button
                           variant="danger"
-                          onClick={() => this.removeVariant(v.id)}
+                          onClick={() => {
+                            this.removeVariant(v.id)
+                          }}
                           className="text-xs px-2 py-1"
                         >
                           Remover
@@ -245,20 +232,22 @@ export default class CampaignEditor extends Component<
                     </div>
                   </div>
                   <VariableToolbar
-                    onInsert={(variable) => this.insertVariable(v.id, variable)}
+                    onInsert={(variable) => {
+                      this.insertVariable(v.id, variable)
+                    }}
                   />
                   <textarea
                     ref={this.getTextareaRef(v.id)}
                     value={v.template}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       this.updateVariant(v.id, { template: e.target.value })
-                    }
+                    }}
                     rows={4}
                     className="w-full flex-auto bg-slate-100 dark:bg-slate-900 border border-slate-400 dark:border-slate-600 p-1 rounded-lg transition-shadow ease-in-out duration-150 focus:shadow-equal focus:shadow-blue-800 dark:focus:shadow-blue-200 focus:outline-none mt-2 text-sm"
                     placeholder={
                       v.useAI
-                        ? "Instruções para a IA (pode usar {variáveis})..."
-                        : "Template da mensagem com {variáveis}..."
+                        ? 'Instruções para a IA (pode usar {variáveis})...'
+                        : 'Template da mensagem com {variáveis}...'
                     }
                   />
                 </div>
@@ -276,39 +265,39 @@ export default class CampaignEditor extends Component<
           )}
 
           {/* Tab: AI */}
-          {activeTab === "ai" && (
+          {activeTab === 'ai' && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
                 <label className="text-sm w-24">Provider:</label>
                 <ControlSelect
                   value={aiConfig.provider}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     this.saveAIConfig({
                       ...aiConfig,
-                      provider: e.target.value as AIConfig["provider"],
-                      model:
-                        AI_MODELS[e.target.value]?.models[0] || aiConfig.model,
+                      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+                      provider: e.target.value as AIConfig['provider'],
+                      model: AI_MODELS[e.target.value]?.models[0] ?? aiConfig.model,
                     })
-                  }
+                  }}
                 >
                   <option value="none">Desativado</option>
                   <option value="claude">Claude (Anthropic)</option>
                   <option value="openai">OpenAI</option>
                 </ControlSelect>
               </div>
-              {aiConfig.provider !== "none" && (
+              {aiConfig.provider !== 'none' && (
                 <>
                   <div className="flex items-center gap-2">
                     <label className="text-sm w-24">API Key:</label>
                     <ControlInput
                       type="password"
                       value={aiConfig.apiKey}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         this.saveAIConfig({
                           ...aiConfig,
                           apiKey: e.target.value,
                         })
-                      }
+                      }}
                       placeholder="sk-..."
                     />
                   </div>
@@ -316,32 +305,30 @@ export default class CampaignEditor extends Component<
                     <label className="text-sm w-24">Modelo:</label>
                     <ControlSelect
                       value={aiConfig.model}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         this.saveAIConfig({
                           ...aiConfig,
                           model: e.target.value,
                         })
-                      }
+                      }}
                     >
-                      {(AI_MODELS[aiConfig.provider]?.models ?? []).map(
-                        (m: string) => (
-                          <option key={m} value={m}>
-                            {m}
-                          </option>
-                        ),
-                      )}
+                      {(AI_MODELS[aiConfig.provider]?.models ?? []).map((m: string) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
                     </ControlSelect>
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="text-sm">Prompt base:</label>
                     <ControlTextArea
                       value={aiConfig.basePrompt}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         this.saveAIConfig({
                           ...aiConfig,
                           basePrompt: e.target.value,
                         })
-                      }
+                      }}
                       rows={5}
                       className="text-sm"
                     />
@@ -352,15 +339,17 @@ export default class CampaignEditor extends Component<
           )}
 
           {/* Tab: Timing */}
-          {activeTab === "timing" && (
+          {activeTab === 'timing' && (
             <TimingControls
               config={timing}
-              onChange={(t) => this.setState({ timing: t })}
+              onChange={(t) => {
+                this.setState({ timing: t })
+              }}
             />
           )}
 
           {/* Tab: Batch */}
-          {activeTab === "batch" && (
+          {activeTab === 'batch' && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
                 <label className="text-sm w-40">Msgs por lote:</label>
@@ -369,11 +358,11 @@ export default class CampaignEditor extends Component<
                   min={1}
                   max={100}
                   value={batch.batchSize}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     this.setState({
                       batch: { ...batch, batchSize: Number(e.target.value) },
                     })
-                  }
+                  }}
                   className="w-24"
                 />
               </div>
@@ -381,14 +370,14 @@ export default class CampaignEditor extends Component<
                 <input
                   type="checkbox"
                   checked={batch.pauseBetweenBatches}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     this.setState({
                       batch: {
                         ...batch,
                         pauseBetweenBatches: e.target.checked,
                       },
                     })
-                  }
+                  }}
                 />
                 Pausar entre lotes (requer resume manual)
               </label>
@@ -400,10 +389,7 @@ export default class CampaignEditor extends Component<
             <Button
               variant="primary"
               onClick={this.handleStart}
-              disabled={
-                leads.length === 0 ||
-                variants.every((v) => !v.template.trim())
-              }
+              disabled={leads.length === 0 || variants.every((v) => !v.template.trim())}
             >
               Iniciar Campanha
             </Button>
@@ -411,16 +397,14 @@ export default class CampaignEditor extends Component<
               variant="secondary"
               onClick={() => void this.handlePreview()}
               disabled={
-                leads.length === 0 ||
-                variants.every((v) => !v.template.trim()) ||
-                previewing
+                leads.length === 0 || variants.every((v) => !v.template.trim()) || previewing
               }
             >
-              {previewing ? "Gerando..." : "Preview (Dry Run)"}
+              {previewing ? 'Gerando...' : 'Preview (Dry Run)'}
             </Button>
           </div>
         </div>
       </Box>
-    );
+    )
   }
 }

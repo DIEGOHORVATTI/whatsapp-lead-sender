@@ -1,93 +1,97 @@
-import { Component } from "react";
-import type { TimingConfig, SafetyLevel } from "../../types/Campaign";
-import { SAFETY_PRESETS } from "../../types/Campaign";
-import { ControlInput } from "../atoms/ControlFactory";
+import { Component } from 'react'
+import type { TimingConfig, SafetyLevel } from '../../types/Campaign'
+import { SAFETY_PRESETS } from '../../types/Campaign'
+import { ControlInput } from '../atoms/ControlFactory'
 
 interface TimingControlsProps {
-  config: TimingConfig;
-  onChange: (config: TimingConfig) => void;
+  config: TimingConfig
+  onChange: (config: TimingConfig) => void
 }
 
 interface TimingControlsState {
-  activeTooltip: string | null;
+  activeTooltip: string | null
 }
 
 const DAYS = [
-  { value: 0, label: "Dom" },
-  { value: 1, label: "Seg" },
-  { value: 2, label: "Ter" },
-  { value: 3, label: "Qua" },
-  { value: 4, label: "Qui" },
-  { value: 5, label: "Sex" },
-  { value: 6, label: "Sáb" },
-];
+  { value: 0, label: 'Dom' },
+  { value: 1, label: 'Seg' },
+  { value: 2, label: 'Ter' },
+  { value: 3, label: 'Qua' },
+  { value: 4, label: 'Qui' },
+  { value: 5, label: 'Sex' },
+  { value: 6, label: 'Sáb' },
+]
 
-const LEVEL_STYLES: Record<SafetyLevel, { bg: string; border: string; icon: string; text: string }> = {
+const LEVEL_STYLES: Record<
+  SafetyLevel,
+  { bg: string; border: string; icon: string; text: string }
+> = {
   safe: {
-    bg: "bg-green-500/10",
-    border: "border-green-500/40",
-    icon: "\u{1F6E1}\u{FE0F}",
-    text: "text-green-400",
+    bg: 'bg-green-500/10',
+    border: 'border-green-500/40',
+    icon: '\u{1F6E1}\u{FE0F}',
+    text: 'text-green-400',
   },
   moderate: {
-    bg: "bg-yellow-500/10",
-    border: "border-yellow-500/40",
-    icon: "\u{26A0}\u{FE0F}",
-    text: "text-yellow-400",
+    bg: 'bg-yellow-500/10',
+    border: 'border-yellow-500/40',
+    icon: '\u{26A0}\u{FE0F}',
+    text: 'text-yellow-400',
   },
   aggressive: {
-    bg: "bg-red-500/10",
-    border: "border-red-500/40",
-    icon: "\u{1F525}",
-    text: "text-red-400",
+    bg: 'bg-red-500/10',
+    border: 'border-red-500/40',
+    icon: '\u{1F525}',
+    text: 'text-red-400',
   },
-};
+}
 
 function detectSafetyLevel(config: TimingConfig): SafetyLevel | null {
   for (const [level, preset] of Object.entries(SAFETY_PRESETS)) {
-    const t = preset.timing;
+    const t = preset.timing
     if (
       config.minDelay === t.minDelay &&
       config.maxDelay === t.maxDelay &&
       config.dailyLimit === t.dailyLimit
     ) {
-      return level as SafetyLevel;
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      return level as SafetyLevel
     }
   }
-  return null;
+  return null
 }
 
 export default class TimingControls extends Component<TimingControlsProps, TimingControlsState> {
-  override state: TimingControlsState = { activeTooltip: null };
+  override state: TimingControlsState = { activeTooltip: null }
 
   private update(partial: Partial<TimingConfig>) {
     this.props.onChange({
       ...this.props.config,
       ...partial,
-      delayMode: "random",
-    });
+      delayMode: 'random',
+    })
   }
 
   private applyPreset(level: SafetyLevel) {
-    const preset = SAFETY_PRESETS[level];
+    const preset = SAFETY_PRESETS[level]
     this.update({
       minDelay: preset.timing.minDelay,
       maxDelay: preset.timing.maxDelay,
       dailyLimit: preset.timing.dailyLimit,
-    });
+    })
   }
 
   private toggleTooltip(id: string) {
     this.setState((prev) => ({
       activeTooltip: prev.activeTooltip === id ? null : id,
-    }));
+    }))
   }
 
   override render() {
-    const { config } = this.props;
-    const { schedule } = config;
-    const { activeTooltip } = this.state;
-    const currentLevel = detectSafetyLevel(config);
+    const { config } = this.props
+    const { schedule } = config
+    const { activeTooltip } = this.state
+    const currentLevel = detectSafetyLevel(config)
 
     return (
       <div className="flex flex-col gap-3">
@@ -97,31 +101,36 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
             <label className="text-xs font-medium">Nível de segurança</label>
             <Tooltip
               id="safety"
-              active={activeTooltip === "safety"}
-              onToggle={() => this.toggleTooltip("safety")}
+              active={activeTooltip === 'safety'}
+              onToggle={() => {
+                this.toggleTooltip('safety')
+              }}
               text="O WhatsApp detecta envios automáticos por padrões de tempo. Intervalos aleatórios e limites diários protegem sua conta contra banimento."
             />
           </div>
           <div className="flex gap-1.5">
+            {/* eslint-disable-next-line @typescript-eslint/consistent-type-assertions */}
             {(Object.keys(SAFETY_PRESETS) as SafetyLevel[]).map((level) => {
-              const preset = SAFETY_PRESETS[level];
-              const style = LEVEL_STYLES[level];
-              const isActive = currentLevel === level;
+              const preset = SAFETY_PRESETS[level]
+              const style = LEVEL_STYLES[level]
+              const isActive = currentLevel === level
               return (
                 <button
                   key={level}
                   type="button"
-                  onClick={() => this.applyPreset(level)}
+                  onClick={() => {
+                    this.applyPreset(level)
+                  }}
                   className={`flex-1 flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg border text-xs transition-all ${
                     isActive
                       ? `${style.bg} ${style.border} ${style.text} border-2`
-                      : "bg-muted border-input text-muted-foreground hover:text-foreground hover:border-foreground/30"
+                      : 'bg-muted border-input text-muted-foreground hover:text-foreground hover:border-foreground/30'
                   }`}
                 >
                   <span className="text-base leading-none">{style.icon}</span>
                   <span className="font-medium">{preset.label}</span>
                 </button>
-              );
+              )
             })}
           </div>
           {currentLevel && (
@@ -142,8 +151,10 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
             <label className="text-xs font-medium">Intervalo aleatório (seg)</label>
             <Tooltip
               id="delay"
-              active={activeTooltip === "delay"}
-              onToggle={() => this.toggleTooltip("delay")}
+              active={activeTooltip === 'delay'}
+              onToggle={() => {
+                this.toggleTooltip('delay')
+              }}
               text="O modo aleatório é obrigatório para simular comportamento humano. Intervalos fixos criam padrões detectáveis pelo WhatsApp."
             />
           </div>
@@ -154,11 +165,11 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
               max="300"
               value={config.minDelay}
               onChange={(e) => {
-                const val = Number(e.target.value);
+                const val = Number(e.target.value)
                 this.update({
                   minDelay: val,
                   maxDelay: Math.max(val + 5, config.maxDelay),
-                });
+                })
               }}
               className="flex-1"
             />
@@ -169,7 +180,7 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
               max="600"
               value={config.maxDelay}
               onChange={(e) => {
-                this.update({ maxDelay: Number(e.target.value) });
+                this.update({ maxDelay: Number(e.target.value) })
               }}
               className="flex-1"
             />
@@ -182,8 +193,10 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
             <label className="text-xs font-medium">Limite diário</label>
             <Tooltip
               id="limit"
-              active={activeTooltip === "limit"}
-              onToggle={() => this.toggleTooltip("limit")}
+              active={activeTooltip === 'limit'}
+              onToggle={() => {
+                this.toggleTooltip('limit')
+              }}
               text="Contas novas devem enviar no máximo 20 msgs/dia. Contas antigas podem chegar a 80, mas nunca ultrapasse 200."
             />
           </div>
@@ -194,13 +207,11 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
               max="200"
               value={config.dailyLimit}
               onChange={(e) => {
-                this.update({ dailyLimit: Number(e.target.value) });
+                this.update({ dailyLimit: Number(e.target.value) })
               }}
               className="flex-1"
             />
-            <span className="text-[10px] text-muted-foreground shrink-0">
-              0 = sem limite
-            </span>
+            <span className="text-[10px] text-muted-foreground shrink-0">0 = sem limite</span>
           </div>
         </div>
 
@@ -213,7 +224,7 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
               onChange={(e) => {
                 this.update({
                   schedule: { ...schedule, enabled: e.target.checked },
-                });
+                })
               }}
             />
             Só horário comercial
@@ -233,7 +244,7 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
                         ...schedule,
                         startHour: Number(e.target.value),
                       },
-                    });
+                    })
                   }}
                   className="w-14"
                 />
@@ -249,7 +260,7 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
                         ...schedule,
                         endHour: Number(e.target.value),
                       },
-                    });
+                    })
                   }}
                   className="w-14"
                 />
@@ -263,15 +274,15 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
                     onClick={() => {
                       const days = schedule.daysOfWeek.includes(d.value)
                         ? schedule.daysOfWeek.filter((x) => x !== d.value)
-                        : [...schedule.daysOfWeek, d.value];
+                        : [...schedule.daysOfWeek, d.value]
                       this.update({
                         schedule: { ...schedule, daysOfWeek: days },
-                      });
+                      })
                     }}
                     className={`px-2 py-1 text-xs rounded ${
                       schedule.daysOfWeek.includes(d.value)
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:text-foreground"
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {d.label}
@@ -282,7 +293,7 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
           )}
         </div>
       </div>
-    );
+    )
   }
 }
 
@@ -294,10 +305,10 @@ function Tooltip({
   active,
   onToggle,
 }: {
-  id: string;
-  text: string;
-  active: boolean;
-  onToggle: () => void;
+  id: string
+  text: string
+  active: boolean
+  onToggle: () => void
 }) {
   return (
     <span className="relative inline-flex">
@@ -315,5 +326,5 @@ function Tooltip({
         </div>
       )}
     </span>
-  );
+  )
 }

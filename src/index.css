@@ -4,55 +4,55 @@
 
 @layer base {
   :root {
-    --background: #F9FAFB;
-    --foreground: #1C252E;
-    --card: #FFFFFF;
-    --card-foreground: #1C252E;
-    --muted: #F4F6F8;
+    --background: #f9fafb;
+    --foreground: #1c252e;
+    --card: #ffffff;
+    --card-foreground: #1c252e;
+    --muted: #f4f6f8;
     --muted-foreground: #637381;
-    --accent: #F4F6F8;
-    --accent-foreground: #1C252E;
-    --border: #DFE3E8;
-    --input: #DFE3E8;
-    --ring: #8E33FF;
-    --primary: #8E33FF;
-    --primary-foreground: #FFFFFF;
-    --secondary: #F4F6F8;
-    --secondary-foreground: #1C252E;
-    --secondary-lighter: #EFD6FF;
-    --destructive: #FF5630;
-    --destructive-foreground: #FFFFFF;
-    --success: #22C55E;
-    --success-foreground: #FFFFFF;
-    --warning: #FFAB00;
-    --warning-foreground: #1C252E;
+    --accent: #f4f6f8;
+    --accent-foreground: #1c252e;
+    --border: #dfe3e8;
+    --input: #dfe3e8;
+    --ring: #8e33ff;
+    --primary: #8e33ff;
+    --primary-foreground: #ffffff;
+    --secondary: #f4f6f8;
+    --secondary-foreground: #1c252e;
+    --secondary-lighter: #efd6ff;
+    --destructive: #ff5630;
+    --destructive-foreground: #ffffff;
+    --success: #22c55e;
+    --success-foreground: #ffffff;
+    --warning: #ffab00;
+    --warning-foreground: #1c252e;
     --radius: 0.5rem;
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --background: #141A21;
-      --foreground: #F9FAFB;
-      --card: #1C252E;
-      --card-foreground: #F4F6F8;
-      --muted: #1C252E;
-      --muted-foreground: #919EAB;
-      --accent: #454F5B;
-      --accent-foreground: #F4F6F8;
-      --border: #454F5B;
-      --input: #454F5B;
-      --ring: #8E33FF;
-      --primary: #8E33FF;
-      --primary-foreground: #FFFFFF;
-      --secondary: #1C252E;
-      --secondary-foreground: #F4F6F8;
-      --secondary-lighter: #27097A;
-      --destructive: #FF5630;
-      --destructive-foreground: #FFFFFF;
-      --success: #22C55E;
-      --success-foreground: #FFFFFF;
-      --warning: #FFAB00;
-      --warning-foreground: #1C252E;
+      --background: #141a21;
+      --foreground: #f9fafb;
+      --card: #1c252e;
+      --card-foreground: #f4f6f8;
+      --muted: #1c252e;
+      --muted-foreground: #919eab;
+      --accent: #454f5b;
+      --accent-foreground: #f4f6f8;
+      --border: #454f5b;
+      --input: #454f5b;
+      --ring: #8e33ff;
+      --primary: #8e33ff;
+      --primary-foreground: #ffffff;
+      --secondary: #1c252e;
+      --secondary-foreground: #f4f6f8;
+      --secondary-lighter: #27097a;
+      --destructive: #ff5630;
+      --destructive-foreground: #ffffff;
+      --success: #22c55e;
+      --success-foreground: #ffffff;
+      --warning: #ffab00;
+      --warning-foreground: #1c252e;
     }
   }
 
@@ -85,7 +85,7 @@
 }
 
 .progress-bar {
-  background: linear-gradient(270deg, #27097A, #8E33FF, #C684FF);
+  background: linear-gradient(270deg, #27097a, #8e33ff, #c684ff);
   background-size: 200% 200%;
 }
 

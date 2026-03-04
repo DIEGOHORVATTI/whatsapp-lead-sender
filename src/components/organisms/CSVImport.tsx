@@ -1,124 +1,127 @@
-import { Component, createRef, type RefObject } from "react";
-import type { Lead } from "../../types/Lead";
-import { LEAD_FIELDS } from "../../types/Lead";
-import { autoMapColumns, mapRowsToLeads, parseCSV } from "../../utils/csvParser";
-import Button from "../atoms/Button";
-import { ControlSelect } from "../atoms/ControlFactory";
-import Box from "../molecules/Box";
+import { Component, createRef, type RefObject } from 'react'
+import type { Lead } from '../../types/Lead'
+import { LEAD_FIELDS } from '../../types/Lead'
+import { autoMapColumns, mapRowsToLeads, parseCSV } from '../../utils/csvParser'
+import Button from '../atoms/Button'
+import { ControlSelect } from '../atoms/ControlFactory'
+import Box from '../molecules/Box'
 
 interface CSVImportProps {
-  onImport: (leads: Lead[]) => void;
+  onImport: (leads: Lead[]) => void
 }
 
 interface CSVImportState {
-  step: "upload" | "map" | "preview";
-  headers: string[];
-  rows: Record<string, string>[];
-  mapping: Record<string, string>;
-  selectedRows: Set<number>;
-  search: string;
-  error?: string;
+  step: 'upload' | 'map' | 'preview'
+  headers: string[]
+  rows: Record<string, string>[]
+  mapping: Record<string, string>
+  selectedRows: Set<number>
+  search: string
+  error?: string
 }
 
 export default class CSVImport extends Component<CSVImportProps, CSVImportState> {
-  private fileRef: RefObject<HTMLInputElement> = createRef<HTMLInputElement>();
+  private fileRef: RefObject<HTMLInputElement> = createRef<HTMLInputElement>()
 
   constructor(props: CSVImportProps) {
-    super(props);
+    super(props)
     this.state = {
-      step: "upload",
+      step: 'upload',
       headers: [],
       rows: [],
       mapping: {},
       selectedRows: new Set(),
-      search: "",
-    };
+      search: '',
+    }
   }
 
   private handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]
+    if (!file) return
 
-    const reader = new FileReader();
+    const reader = new FileReader()
     reader.onload = () => {
       try {
-        const text = reader.result as string;
-        const { headers, rows } = parseCSV(text);
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+        const text = reader.result as string
+        const { headers, rows } = parseCSV(text)
         if (headers.length === 0) {
-          this.setState({ error: "CSV vazio ou inválido" });
-          return;
+          this.setState({ error: 'CSV vazio ou inválido' })
+          return
         }
-        const mapping = autoMapColumns(headers);
-        const allSelected = new Set(rows.map((_: Record<string, string>, i: number) => i));
+        const mapping = autoMapColumns(headers)
+        const allSelected = new Set(rows.map((_: Record<string, string>, i: number) => i))
         this.setState({
-          step: "map",
+          step: 'map',
           headers,
           rows,
           mapping,
           selectedRows: allSelected,
           error: undefined,
-        });
+        })
       } catch {
-        this.setState({ error: "Erro ao ler CSV" });
+        this.setState({ error: 'Erro ao ler CSV' })
       }
-    };
-    reader.readAsText(file, "utf-8");
-  };
+    }
+    reader.readAsText(file, 'utf-8')
+  }
 
   private handleMappingChange = (csvCol: string, leadField: string) => {
-    const mapping = { ...this.state.mapping };
+    const mapping = { ...this.state.mapping }
     // Remove previous mapping to this leadField
-    const keys = Object.keys(mapping);
+    const keys = Object.keys(mapping)
     for (const key of keys) {
-      if (mapping[key] === leadField && key !== csvCol) delete mapping[key];
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      if (mapping[key] === leadField && key !== csvCol) delete mapping[key]
     }
     if (leadField) {
-      mapping[csvCol] = leadField;
+      mapping[csvCol] = leadField
     } else {
-      delete mapping[csvCol];
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete mapping[csvCol]
     }
-    this.setState({ mapping });
-  };
+    this.setState({ mapping })
+  }
 
   private toggleRow = (idx: number) => {
-    const selected = new Set(this.state.selectedRows);
-    if (selected.has(idx)) selected.delete(idx);
-    else selected.add(idx);
-    this.setState({ selectedRows: selected });
-  };
+    const selected = new Set(this.state.selectedRows)
+    if (selected.has(idx)) selected.delete(idx)
+    else selected.add(idx)
+    this.setState({ selectedRows: selected })
+  }
 
   private toggleAll = () => {
-    const { rows, selectedRows } = this.state;
+    const { rows, selectedRows } = this.state
     if (selectedRows.size === rows.length) {
-      this.setState({ selectedRows: new Set() });
+      this.setState({ selectedRows: new Set() })
     } else {
-      this.setState({ selectedRows: new Set(rows.map((_: Record<string, string>, i: number) => i)) });
+      this.setState({
+        selectedRows: new Set(rows.map((_: Record<string, string>, i: number) => i)),
+      })
     }
-  };
+  }
 
   private handleImport = () => {
-    const { rows, mapping, selectedRows } = this.state;
-    const selectedData = rows.filter((_: Record<string, string>, i: number) => selectedRows.has(i));
-    const leads = mapRowsToLeads(selectedData, mapping);
-    this.props.onImport(leads);
-  };
+    const { rows, mapping, selectedRows } = this.state
+    const selectedData = rows.filter((_: Record<string, string>, i: number) => selectedRows.has(i))
+    const leads = mapRowsToLeads(selectedData, mapping)
+    this.props.onImport(leads)
+  }
 
   private getFilteredRows(): { row: Record<string, string>; idx: number }[] {
-    const { rows, search } = this.state;
-    const s = search.toLowerCase();
+    const { rows, search } = this.state
+    const s = search.toLowerCase()
     return rows
       .map((row: Record<string, string>, idx: number) => ({ row, idx }))
-      .filter(
-        ({ row }) => {
-          if (!s) return true;
-          const vals = Object.keys(row);
-          return vals.some((k) => (row[k] || "").toLowerCase().includes(s));
-        },
-      );
+      .filter(({ row }) => {
+        if (!s) return true
+        const vals = Object.keys(row)
+        return vals.some((k) => (row[k] ?? '').toLowerCase().includes(s))
+      })
   }
 
   override render() {
-    const { step, headers, mapping, selectedRows, search, error } = this.state;
+    const { step, headers, mapping, selectedRows, search, error } = this.state
 
     return (
       <Box title="Importar CSV de Leads">
@@ -132,13 +135,14 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
           {/* Step 1: Upload */}
           <div className="flex items-center gap-2">
             <input
+              // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
               ref={this.fileRef as React.LegacyRef<HTMLInputElement>}
               type="file"
               accept=".csv,.txt"
               onChange={this.handleFile}
               className="text-sm"
             />
-            {step !== "upload" && (
+            {step !== 'upload' && (
               <span className="text-sm text-green-600 dark:text-green-400">
                 {this.state.rows.length} linhas carregadas
               </span>
@@ -146,12 +150,10 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
           </div>
 
           {/* Step 2: Column Mapping */}
-          {(step === "map" || step === "preview") && (
+          {(step === 'map' || step === 'preview') && (
             <>
               <div className="border border-slate-200 dark:border-slate-700 rounded p-3">
-                <h3 className="text-sm font-semibold mb-2">
-                  Mapeamento de Colunas
-                </h3>
+                <h3 className="text-sm font-semibold mb-2">Mapeamento de Colunas</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {headers.map((h) => (
                     <div key={h} className="flex items-center gap-2">
@@ -159,10 +161,10 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
                         {h}
                       </span>
                       <ControlSelect
-                        value={mapping[h] || ""}
-                        onChange={(e) =>
+                        value={mapping[h] ?? ''}
+                        onChange={(e) => {
                           this.handleMappingChange(h, e.target.value)
-                        }
+                        }}
                         className="text-xs"
                       >
                         <option value="">— ignorar —</option>
@@ -178,7 +180,9 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
                 <div className="mt-2 flex gap-2">
                   <Button
                     variant="primary"
-                    onClick={() => this.setState({ step: "preview" })}
+                    onClick={() => {
+                      this.setState({ step: 'preview' })
+                    }}
                     className="text-sm"
                   >
                     Pré-visualizar
@@ -189,28 +193,24 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
           )}
 
           {/* Step 3: Preview & Select */}
-          {step === "preview" && (
+          {step === 'preview' && (
             <>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   placeholder="Buscar..."
                   value={search}
-                  onChange={(e) => this.setState({ search: e.target.value })}
+                  onChange={(e) => {
+                    this.setState({ search: e.target.value })
+                  }}
                   className="px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-900"
                 />
-                <Button
-                  variant="light"
-                  onClick={this.toggleAll}
-                  className="text-xs"
-                >
+                <Button variant="light" onClick={this.toggleAll} className="text-xs">
                   {selectedRows.size === this.state.rows.length
-                    ? "Desmarcar todos"
-                    : "Selecionar todos"}
+                    ? 'Desmarcar todos'
+                    : 'Selecionar todos'}
                 </Button>
-                <span className="text-xs text-slate-500">
-                  {selectedRows.size} selecionados
-                </span>
+                <span className="text-xs text-slate-500">{selectedRows.size} selecionados</span>
               </div>
               <div className="overflow-auto max-h-64 border border-slate-200 dark:border-slate-700 rounded">
                 <table className="w-full text-xs">
@@ -228,42 +228,34 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
                     {this.getFilteredRows()
                       .slice(0, 100)
                       .map(({ row, idx }) => {
-                        const mapped: Record<string, string> = {};
-                        const mappingKeys = Object.keys(mapping);
+                        const mapped: Record<string, string> = {}
+                        const mappingKeys = Object.keys(mapping)
                         for (const csvCol of mappingKeys) {
-                          const leadField = mapping[csvCol];
+                          const leadField = mapping[csvCol]
                           if (leadField) {
-                            mapped[leadField] = row[csvCol] || "";
+                            mapped[leadField] = row[csvCol] ?? ''
                           }
                         }
                         return (
                           <tr
                             key={idx}
                             className={`border-t border-slate-100 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 ${
-                              !selectedRows.has(idx) ? "opacity-40" : ""
+                              !selectedRows.has(idx) ? 'opacity-40' : ''
                             }`}
-                            onClick={() => this.toggleRow(idx)}
+                            onClick={() => {
+                              this.toggleRow(idx)
+                            }}
                           >
                             <td className="p-1 text-center">
-                              <input
-                                type="checkbox"
-                                checked={selectedRows.has(idx)}
-                                readOnly
-                              />
+                              <input type="checkbox" checked={selectedRows.has(idx)} readOnly />
                             </td>
-                            <td className="p-1 truncate max-w-32">
-                              {mapped["nome_fantasia"]}
-                            </td>
-                            <td className="p-1 truncate max-w-24">
-                              {mapped["decisor"]}
-                            </td>
-                            <td className="p-1 truncate max-w-24">
-                              {mapped["segmento"]}
-                            </td>
-                            <td className="p-1">{mapped["telefone"]}</td>
-                            <td className="p-1">{mapped["cidade"]}</td>
+                            <td className="p-1 truncate max-w-32">{mapped['nome_fantasia']}</td>
+                            <td className="p-1 truncate max-w-24">{mapped['decisor']}</td>
+                            <td className="p-1 truncate max-w-24">{mapped['segmento']}</td>
+                            <td className="p-1">{mapped['telefone']}</td>
+                            <td className="p-1">{mapped['cidade']}</td>
                           </tr>
-                        );
+                        )
                       })}
                   </tbody>
                 </table>
@@ -280,6 +272,6 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
           )}
         </div>
       </Box>
-    );
+    )
   }
 }
