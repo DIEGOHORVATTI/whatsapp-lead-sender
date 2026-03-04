@@ -1,6 +1,6 @@
 import { Component } from 'react'
 import type { Lead, LeadMeta } from '../../types/Lead'
-import { LEAD_FIELDS } from '../../types/Lead'
+import { LEAD_FIELDS, toTitleCase } from '../../types/Lead'
 import campaignStorage from '../../utils/CampaignStorage'
 import { t } from '../../utils/i18n'
 import Button from '../atoms/Button'
@@ -272,11 +272,11 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
                       <td className="p-1.5 text-center">
                         <input type="checkbox" checked={selectedIds.has(lead.id)} readOnly />
                       </td>
-                      <td className="p-1.5 truncate max-w-24">{lead.nome_fantasia}</td>
-                      <td className="p-1.5 truncate max-w-20">{lead.decisor}</td>
-                      <td className="p-1.5 truncate max-w-20">{lead.segmento}</td>
+                      <td className="p-1.5 truncate max-w-24">{toTitleCase(lead.nome_fantasia)}</td>
+                      <td className="p-1.5 truncate max-w-20">{toTitleCase(lead.decisor)}</td>
+                      <td className="p-1.5 truncate max-w-20">{toTitleCase(lead.segmento)}</td>
                       <td className="p-1.5 truncate max-w-16">
-                        {lead.cidade}
+                        {toTitleCase(lead.cidade)}
                         {lead.uf ? `/${lead.uf}` : ''}
                       </td>
                       <td className="p-1.5 font-mono">{lead.telefone}</td>

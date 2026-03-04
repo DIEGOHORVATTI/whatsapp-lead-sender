@@ -1,6 +1,6 @@
 import { Component } from 'react'
 import type { Lead, LeadMeta } from '../../types/Lead'
-import { LEAD_FIELDS } from '../../types/Lead'
+import { LEAD_FIELDS, toTitleCase } from '../../types/Lead'
 import campaignStorage from '../../utils/CampaignStorage'
 import { t } from '../../utils/i18n'
 import Button from '../atoms/Button'
@@ -150,10 +150,13 @@ export default class ContactPickerModal extends Component<
     this.setState({ selectedIds: next })
   }
 
+  private getApplicableLeads(): Lead[] {
+    const filtered = this.getFilteredLeads()
+    return filtered.filter((l) => this.state.selectedIds.has(l.id))
+  }
+
   private handleApply = () => {
-    const { leads, selectedIds } = this.state
-    const selected = leads.filter((l) => selectedIds.has(l.id))
-    this.props.onSelect(selected)
+    this.props.onSelect(this.getApplicableLeads())
   }
 
   private clearFilters = () => {
@@ -164,6 +167,7 @@ export default class ContactPickerModal extends Component<
     const { onClose } = this.props
     const { loading, filters, search, selectedIds, linhaFrom, linhaTo } = this.state
     const filtered = this.getFilteredLeads()
+    const applicableCount = filtered.filter((l) => selectedIds.has(l.id)).length
     const hasActiveFilters =
       Object.keys(filters).some((k) => filters[k] && filters[k].length > 0) || linhaFrom || linhaTo
 
@@ -180,7 +184,7 @@ export default class ContactPickerModal extends Component<
           </button>
           <h3 className="text-sm font-semibold flex-1">{t('select_saved_contacts')}</h3>
           <span className="text-[10px] text-muted-foreground">
-            {selectedIds.size} {t('of')} {this.state.leads.length} {t('selected')}
+            {applicableCount} {t('of')} {filtered.length} {t('selected')}
           </span>
         </div>
 
@@ -345,8 +349,8 @@ export default class ContactPickerModal extends Component<
                         <td className="p-1.5 text-center">
                           <input type="checkbox" checked={selectedIds.has(lead.id)} readOnly />
                         </td>
-                        <td className="p-1.5 truncate max-w-24">{lead.nome_fantasia}</td>
-                        <td className="p-1.5 truncate max-w-20">{lead.decisor}</td>
+                        <td className="p-1.5 truncate max-w-24">{toTitleCase(lead.nome_fantasia)}</td>
+                        <td className="p-1.5 truncate max-w-20">{toTitleCase(lead.decisor)}</td>
                         <td className="p-1.5 font-mono text-[11px]">
                           {formatPhoneDisplay(lead.telefone)}
                         </td>
@@ -362,7 +366,7 @@ export default class ContactPickerModal extends Component<
         {/* Footer */}
         <div className="flex items-center justify-between p-3 border-t border-border bg-card">
           <span className="text-xs text-muted-foreground">
-            {filtered.length} {t('contacts')} | {selectedIds.size} {t('selected')}
+            {filtered.length} {t('contacts')} | {applicableCount} {t('selected')}
           </span>
           <div className="flex gap-2">
             <Button variant="light" onClick={onClose} className="text-xs">
@@ -371,10 +375,10 @@ export default class ContactPickerModal extends Component<
             <Button
               variant="primary"
               onClick={this.handleApply}
-              disabled={selectedIds.size === 0}
+              disabled={applicableCount === 0}
               className="text-xs"
             >
-              {`${t('select')} ${selectedIds.size} ${t('contacts')}`}
+              {`${t('select')} ${applicableCount} ${t('contacts')}`}
             </Button>
           </div>
         </div>

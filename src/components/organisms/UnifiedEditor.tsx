@@ -11,6 +11,7 @@ import type {
 } from '../../types/Campaign'
 import { DEFAULT_BATCH, DEFAULT_TIMING, normalizeVariant } from '../../types/Campaign'
 import type { Lead } from '../../types/Lead'
+import { toTitleCase } from '../../types/Lead'
 import campaignManager from '../../utils/CampaignManager'
 import campaignStorage from '../../utils/CampaignStorage'
 import { generateMessage } from '../../utils/aiService'
@@ -806,26 +807,26 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                   {previewLead.nome_fantasia && (
                     <>
                       <span className="text-muted-foreground">{t('name')}:</span>
-                      <span className="font-medium truncate">{previewLead.nome_fantasia}</span>
+                      <span className="font-medium truncate">{toTitleCase(previewLead.nome_fantasia)}</span>
                     </>
                   )}
                   {previewLead.decisor && (
                     <>
                       <span className="text-muted-foreground">{t('decision_maker')}:</span>
-                      <span className="font-medium truncate">{previewLead.decisor}</span>
+                      <span className="font-medium truncate">{toTitleCase(previewLead.decisor)}</span>
                     </>
                   )}
                   {previewLead.segmento && (
                     <>
                       <span className="text-muted-foreground">{t('segment')}:</span>
-                      <span className="truncate">{previewLead.segmento}</span>
+                      <span className="truncate">{toTitleCase(previewLead.segmento)}</span>
                     </>
                   )}
                   {previewLead.cidade && (
                     <>
                       <span className="text-muted-foreground">{t('city')}:</span>
                       <span className="truncate">
-                        {previewLead.cidade}
+                        {toTitleCase(previewLead.cidade)}
                         {previewLead.uf ? `/${previewLead.uf}` : ''}
                       </span>
                     </>

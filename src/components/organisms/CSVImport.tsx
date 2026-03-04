@@ -1,6 +1,6 @@
 import { Component, createRef, type RefObject } from 'react'
 import type { Lead } from '../../types/Lead'
-import { LEAD_FIELDS } from '../../types/Lead'
+import { LEAD_FIELDS, toTitleCase } from '../../types/Lead'
 import { autoMapColumns, mapRowsToLeads, parseCSV } from '../../utils/csvParser'
 import { t } from '../../utils/i18n'
 import Button from '../atoms/Button'
@@ -308,11 +308,11 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
                             <td className="p-1 text-center">
                               <input type="checkbox" checked={selectedRows.has(idx)} readOnly />
                             </td>
-                            <td className="p-1 truncate max-w-32">{mapped['nome_fantasia']}</td>
-                            <td className="p-1 truncate max-w-24">{mapped['decisor']}</td>
-                            <td className="p-1 truncate max-w-24">{mapped['segmento']}</td>
+                            <td className="p-1 truncate max-w-32">{toTitleCase(mapped['nome_fantasia'] ?? '')}</td>
+                            <td className="p-1 truncate max-w-24">{toTitleCase(mapped['decisor'] ?? '')}</td>
+                            <td className="p-1 truncate max-w-24">{toTitleCase(mapped['segmento'] ?? '')}</td>
                             <td className="p-1">{mapped['telefone']}</td>
-                            <td className="p-1">{mapped['cidade']}</td>
+                            <td className="p-1">{toTitleCase(mapped['cidade'] ?? '')}</td>
                           </tr>
                         )
                       })}

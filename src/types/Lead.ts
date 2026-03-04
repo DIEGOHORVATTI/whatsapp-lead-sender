@@ -35,6 +35,22 @@ export function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, '')
 }
 
+const LOWERCASE_WORDS = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'nas', 'nos', 'para', 'por', 'com'])
+
+export function toTitleCase(text: string): string {
+  if (!text) return text
+  // Skip if already mixed case (not all upper)
+  if (text !== text.toUpperCase()) return text
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map((word, i) => {
+      if (i > 0 && LOWERCASE_WORDS.has(word)) return word
+      return word.charAt(0).toUpperCase() + word.slice(1)
+    })
+    .join(' ')
+}
+
 export const LEAD_FIELDS: { key: keyof Lead; label: string }[] = [
   { key: 'nome_fantasia', label: 'Nome Fantasia' },
   { key: 'decisor', label: 'Decisor' },
