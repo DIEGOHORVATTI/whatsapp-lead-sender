@@ -179,7 +179,7 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
                       delete next[field]
                       this.setState({ filters: next })
                     }}
-                    className="hover:text-destructive"
+                    className="w-4 h-4 flex items-center justify-center rounded-full text-[10px] hover:bg-white/20 transition-colors"
                   >
                     ×
                   </button>

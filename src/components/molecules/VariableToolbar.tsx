@@ -1,27 +1,37 @@
 import { Component } from 'react'
 import { LEAD_FIELDS } from '../../types/Lead'
-
 interface VariableToolbarProps {
   onInsert: (variable: string) => void
 }
-
 export default class VariableToolbar extends Component<VariableToolbarProps> {
   override render() {
     return (
-      <div className="flex flex-wrap gap-1 p-2 bg-muted rounded-md border border-border">
-        <span className="text-xs text-muted-foreground w-full mb-1">
-          Clique para inserir variável:
+      <div className="flex flex-wrap items-center gap-1.5 px-3 py-2.5 bg-background rounded-lg border border-border/60 shadow-sm">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 w-full mb-0.5 select-none">
+          Inserir variável
         </span>
+
         {LEAD_FIELDS.map(({ key, label }) => (
           <button
             key={key}
             type="button"
             onClick={() => {
-              this.props.onInsert(`{${String(key)}}`)
+              this.props.onInsert(String(key))
             }}
-            className="px-2 py-0.5 text-xs bg-secondary-lighter text-primary rounded hover:opacity-80 transition-colors"
+            className="
+              inline-flex items-center
+              px-2.5 py-0.5
+              text-[11px] font-semibold
+              rounded-md
+              bg-primary/10 text-primary
+              border border-primary/20
+              hover:bg-primary/20
+              active:scale-95
+              transition-all duration-150
+              cursor-pointer select-none
+            "
           >
-            {label}
+            {`{{${label}}}`}
           </button>
         ))}
       </div>

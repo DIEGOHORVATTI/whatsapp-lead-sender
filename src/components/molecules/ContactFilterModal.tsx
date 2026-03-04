@@ -74,7 +74,7 @@ export default class ContactFilterModal extends Component<
             <button
               type="button"
               onClick={onClose}
-              className="text-muted-foreground hover:text-foreground text-lg leading-none"
+              className="w-7 h-7 flex items-center justify-center rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               ×
             </button>
@@ -111,7 +111,7 @@ export default class ContactFilterModal extends Component<
                           delete next[field]
                           this.setState({ filters: next })
                         }}
-                        className="hover:text-destructive"
+                        className="w-4 h-4 flex items-center justify-center rounded-full text-[10px] hover:bg-white/20 transition-colors"
                       >
                         ×
                       </button>

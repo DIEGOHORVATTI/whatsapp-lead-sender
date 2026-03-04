@@ -296,14 +296,15 @@ export default class MessageButtonsForm extends Component<
                     />
                   </td>
                   <td className="border text-center align-middle">
-                    <Button
-                      className="text-3xl text-red-500 hover:text-red-600 dark:hover:text-red-400 p-0 ring-0"
+                    <button
+                      type="button"
+                      className="w-7 h-7 flex items-center justify-center rounded-full text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                       onClick={() => {
                         this.handleDeleteButton(button.id)
                       }}
                     >
                       ×
-                    </Button>
+                    </button>
                   </td>
                 </tr>
               ))}

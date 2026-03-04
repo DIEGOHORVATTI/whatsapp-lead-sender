@@ -623,7 +623,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                     onClick={() => {
                       this.removeVariant(activeVariantIndex)
                     }}
-                    className="w-6 h-6 flex items-center justify-center text-sm rounded-lg text-destructive bg-destructive/8 hover:bg-destructive/16 transition-colors"
+                    className="w-7 h-7 flex items-center justify-center rounded-full text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     title="Remover variante"
                   >
                     ×
@@ -650,7 +650,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                           template: templates[0] ?? '',
                         })
                       }}
-                      className="w-5 h-5 flex items-center justify-center text-xs rounded-md text-destructive bg-destructive/8 hover:bg-destructive/16 transition-colors ml-auto"
+                      className="w-6 h-6 flex items-center justify-center rounded-full text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors ml-auto"
                       title={t('remove_message')}
                     >
                       ×

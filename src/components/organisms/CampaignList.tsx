@@ -126,7 +126,7 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-sm font-medium truncate flex-1">{c.name}</span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <span
                       className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusInfo.className}`}
                     >
@@ -135,7 +135,7 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
                     <button
                       type="button"
                       onClick={(e) => this.handleEdit(e, c)}
-                      className="text-xs text-primary hover:opacity-80"
+                      className="w-7 h-7 flex items-center justify-center rounded-full text-sm text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                       title={t('edit_campaign')}
                     >
                       ✎
@@ -143,7 +143,7 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
                     <button
                       type="button"
                       onClick={(e) => void this.handleCopy(e, c)}
-                      className="text-xs text-primary hover:opacity-80"
+                      className="w-7 h-7 flex items-center justify-center rounded-full text-sm text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                       title={t('copy_campaign')}
                     >
                       ⧉
@@ -151,7 +151,7 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
                     <button
                       type="button"
                       onClick={(e) => void this.handleDelete(e, c.id)}
-                      className="text-xs text-destructive hover:opacity-80"
+                      className="w-7 h-7 flex items-center justify-center rounded-full text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                       title={t('delete_campaign')}
                     >
                       ×
