@@ -1,12 +1,14 @@
 import { Component } from 'react'
 import type { Campaign, CampaignResult } from '../../types/Campaign'
 import { exportCampaignResults, downloadCSV } from '../../utils/csvExporter'
+import CountdownBar from '../molecules/CountdownBar'
 
 interface CampaignProgressProps {
   campaign: Campaign
   results: CampaignResult[]
   isRunning: boolean
   isPaused: boolean
+  delayInfo: { totalMs: number; startedAt: number } | null
   onPause: () => void
   onResume: () => void
   onStop: () => void
@@ -22,7 +24,7 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
   }
 
   override render() {
-    const { campaign, results, isRunning, isPaused, onPause, onResume, onStop, onBack } = this.props
+    const { campaign, results, isRunning, isPaused, delayInfo, onPause, onResume, onStop, onBack } = this.props
 
     const sent = results.filter((r) => r.status === 'sent').length
     const failed = results.filter((r) => r.status === 'failed').length
@@ -109,6 +111,11 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
             </span>
           </div>
         </div>
+
+        {/* Countdown Timer */}
+        {isRunning && !isPaused && delayInfo && (
+          <CountdownBar totalMs={delayInfo.totalMs} startedAt={delayInfo.startedAt} />
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-4 gap-1.5 text-center">

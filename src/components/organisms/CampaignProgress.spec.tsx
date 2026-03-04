@@ -38,6 +38,7 @@ describe('CampaignProgress', () => {
     onResume: vi.fn(),
     onStop: vi.fn(),
     onBack: vi.fn(),
+    delayInfo: null,
   }
 
   it('should render campaign name', () => {

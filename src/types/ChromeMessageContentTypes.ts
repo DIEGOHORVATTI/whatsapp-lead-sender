@@ -37,4 +37,8 @@ export default interface ChromeMessageContentTypes {
       error?: string
     }
   }
+  [ChromeMessageTypes.INCOMING_MESSAGE]: {
+    payload: { from: string; timestamp: number }
+    response: boolean
+  }
 }

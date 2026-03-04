@@ -12,8 +12,10 @@ declare global {
 }
 
 const RELOAD_KEY = 'WTF_INJECT_RELOAD_COUNT'
-const MAX_RETRIES = 3
+const MAX_RETRIES = 5
 const SEND_TIMEOUT_MS = 45_000
+const INJECT_RETRY_DELAY_MS = 2_000
+const INJECT_MAX_ATTEMPTS = 5
 const reloadCount = Number(sessionStorage.getItem(RELOAD_KEY) ?? '0')
 
 // --- Diagnostic state ---
@@ -40,10 +42,20 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   ])
 }
 
-if (reloadCount >= MAX_RETRIES) {
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// Guard: prevent duplicate injection across reloads/re-runs
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+if ((window as any).__WTF_INJECTED__) {
+  dbg('Já injetado, ignorando re-execução')
+} else if (reloadCount >= MAX_RETRIES) {
   wppError = `Parou após ${String(MAX_RETRIES)} tentativas de reload. Recarregue a página manualmente.`
   dbgErr(wppError)
 } else {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(window as any).__WTF_INJECTED__ = true
   sessionStorage.setItem(RELOAD_KEY, String(reloadCount + 1))
   dbg('Inicializando... tentativa', reloadCount + 1, 'de', MAX_RETRIES)
 
@@ -268,34 +280,97 @@ if (reloadCount >= MAX_RETRIES) {
 
   void storageManager.clearDatabase()
 
-  // --- Injection ---
-  dbg('Chamando WPP.webpack.injectLoader()...')
-  try {
-    WPP.webpack.injectLoader()
-    wppInjected = true
-    dbg('injectLoader() OK ✓')
-  } catch (e) {
-    wppError = `injectLoader falhou: ${e instanceof Error ? e.message : String(e)}`
-    dbgErr(wppError)
+  // --- Wait for WhatsApp webpack to be available, then inject ---
+  const waitForWebpack = (): Promise<void> => {
+    return new Promise((resolve) => {
+      // Check if webpack chunks array already exists
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const win = window as any
+      if (win.webpackChunkwhatsapp_web_client || win.__webpack_require__) {
+        resolve()
+        return
+      }
+      dbg('Aguardando webpack do WhatsApp carregar...')
+      const observer = new MutationObserver(() => {
+        if (win.webpackChunkwhatsapp_web_client || win.__webpack_require__) {
+          observer.disconnect()
+          resolve()
+        }
+      })
+      observer.observe(document.documentElement, { childList: true, subtree: true })
+      // Fallback: resolve after 5s even if not detected
+      setTimeout(() => {
+        observer.disconnect()
+        resolve()
+      }, 5_000)
+    })
+  }
+
+  const tryInject = async () => {
+    await waitForWebpack()
+    dbg('Webpack detectado, iniciando injeção...')
+
+    for (let attempt = 1; attempt <= INJECT_MAX_ATTEMPTS; attempt++) {
+      dbg(`Chamando WPP.webpack.injectLoader()... tentativa ${attempt}/${INJECT_MAX_ATTEMPTS}`)
+      try {
+        WPP.webpack.injectLoader()
+        wppInjected = true
+        dbg('injectLoader() OK ✓')
+        return
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        dbgErr(`injectLoader falhou (tentativa ${attempt}):`, msg)
+        if (attempt < INJECT_MAX_ATTEMPTS) {
+          const delay = INJECT_RETRY_DELAY_MS * attempt // backoff progressivo
+          dbg(`Aguardando ${delay}ms antes de re-tentar...`)
+          await sleep(delay)
+        }
+      }
+    }
+    // All in-page retries exhausted — reload as last resort
+    wppError = `injectLoader falhou após ${INJECT_MAX_ATTEMPTS} tentativas`
+    dbgErr(wppError, '→ recarregando página')
     window.location.reload()
   }
+
+  void tryInject()
 
   WPP.webpack.onReady(() => {
     wppReady = true
     sessionStorage.removeItem(RELOAD_KEY)
     dbg('WPP PRONTO ✓ | isAuthenticated:', window.WPP.conn.isAuthenticated())
+
+    // Listen for incoming messages to track responses
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    window.WPP.on('chat.new_message', (msg: any) => {
+      try {
+        if (!msg.id?.fromMe && !msg.isGroupMsg && msg.type === 'chat') {
+          const phone = String(msg.from ?? '').replace(/@.*$/, '')
+          if (phone) {
+            dbg('Incoming message from:', phone)
+            void WebpageMessageManager.sendMessage(ChromeMessageTypes.INCOMING_MESSAGE, {
+              from: phone,
+              timestamp: Date.now(),
+            })
+          }
+        }
+      } catch {
+        /* ignore listener errors */
+      }
+    })
+    dbg('Listener de mensagens recebidas ativo ✓')
   })
 
-  // Diagnóstico: se não ficar pronto em 15s, logar warning
+  // Diagnóstico: se não ficar pronto em 30s, logar warning
   setTimeout(() => {
     if (!wppReady) {
       dbgErr(
-        'WPP não ficou pronto após 15s! injected:',
+        'WPP não ficou pronto após 30s! injected:',
         wppInjected,
         '| isReady:',
         window.WPP.isReady
       )
-      wppError = 'WPP não inicializou após 15s. O WhatsApp Web pode ter atualizado.'
+      wppError = 'WPP não inicializou após 30s. O WhatsApp Web pode ter atualizado.'
     }
-  }, 15_000)
+  }, 30_000)
 }

@@ -6,4 +6,5 @@ export enum ChromeMessageTypes {
   STOP_QUEUE = 'STOP_QUEUE',
   ADD_LOG = 'ADD_LOG',
   WPP_STATUS = 'WPP_STATUS',
+  INCOMING_MESSAGE = 'INCOMING_MESSAGE',
 }

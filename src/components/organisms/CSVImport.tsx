@@ -13,10 +13,13 @@ interface CSVImportProps {
 interface CSVImportState {
   step: 'upload' | 'map' | 'preview'
   headers: string[]
+  allRows: Record<string, string>[]
   rows: Record<string, string>[]
   mapping: Record<string, string>
   selectedRows: Set<number>
   search: string
+  lineStart: string
+  lineEnd: string
   error?: string
 }
 
@@ -28,10 +31,13 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
     this.state = {
       step: 'upload',
       headers: [],
+      allRows: [],
       rows: [],
       mapping: {},
       selectedRows: new Set(),
       search: '',
+      lineStart: '0',
+      lineEnd: '',
     }
   }
 
@@ -54,9 +60,12 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
         this.setState({
           step: 'map',
           headers,
+          allRows: rows,
           rows,
           mapping,
           selectedRows: allSelected,
+          lineStart: '0',
+          lineEnd: String(rows.length),
           error: undefined,
         })
       } catch {
@@ -64,6 +73,15 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
       }
     }
     reader.readAsText(file, 'utf-8')
+  }
+
+  private applyRange = () => {
+    const { allRows, lineStart, lineEnd } = this.state
+    const start = Math.max(0, parseInt(lineStart, 10) || 0)
+    const end = lineEnd ? Math.min(allRows.length, parseInt(lineEnd, 10) || allRows.length) : allRows.length
+    const rows = allRows.slice(start, end)
+    const allSelected = new Set(rows.map((_: Record<string, string>, i: number) => i))
+    this.setState({ rows, selectedRows: allSelected })
   }
 
   private handleMappingChange = (csvCol: string, leadField: string) => {
@@ -133,19 +151,55 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
           )}
 
           {/* Step 1: Upload */}
-          <div className="flex items-center gap-2">
-            <input
-              // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-              ref={this.fileRef as React.LegacyRef<HTMLInputElement>}
-              type="file"
-              accept=".csv,.txt"
-              onChange={this.handleFile}
-              className="text-sm"
-            />
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <input
+                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+                ref={this.fileRef as React.LegacyRef<HTMLInputElement>}
+                type="file"
+                accept=".csv,.txt"
+                onChange={this.handleFile}
+                className="text-sm"
+              />
+              {step !== 'upload' && (
+                <span className="text-sm text-green-600 dark:text-green-400">
+                  {this.state.allRows.length} linhas no arquivo
+                </span>
+              )}
+            </div>
             {step !== 'upload' && (
-              <span className="text-sm text-green-600 dark:text-green-400">
-                {this.state.rows.length} linhas carregadas
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">Linhas:</span>
+                <input
+                  type="number"
+                  min="0"
+                  max={this.state.allRows.length}
+                  value={this.state.lineStart}
+                  onChange={(e) => {
+                    this.setState({ lineStart: e.target.value })
+                  }}
+                  placeholder="0"
+                  className="w-20 px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-900"
+                />
+                <span className="text-xs text-slate-500">até</span>
+                <input
+                  type="number"
+                  min="0"
+                  max={this.state.allRows.length}
+                  value={this.state.lineEnd}
+                  onChange={(e) => {
+                    this.setState({ lineEnd: e.target.value })
+                  }}
+                  placeholder={String(this.state.allRows.length)}
+                  className="w-20 px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-900"
+                />
+                <Button variant="light" onClick={this.applyRange} className="text-xs">
+                  Aplicar
+                </Button>
+                <span className="text-xs text-slate-500">
+                  ({this.state.rows.length} selecionadas)
+                </span>
+              </div>
             )}
           </div>
 

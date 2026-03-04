@@ -32,12 +32,14 @@ function addLog(level: number, message: string, contact = '', attachment = false
 }
 
 type StatusCallback = (campaign: Campaign) => void
+type DelayCallback = (info: { totalMs: number; startedAt: number } | null) => void
 
 class CampaignManager {
   private currentCampaign?: Campaign
   private leads: Lead[] = []
   private aiConfig?: AIConfig
   private statusCallback?: StatusCallback
+  private delayCallback?: DelayCallback
   private sendFn?: (contact: string, message: string) => Promise<boolean>
   private aborted = false
   private paused = false
@@ -45,6 +47,10 @@ class CampaignManager {
 
   onStatusChange(cb: StatusCallback) {
     this.statusCallback = cb
+  }
+
+  onDelayChange(cb: DelayCallback) {
+    this.delayCallback = cb
   }
 
   setSendFunction(fn: (contact: string, message: string) => Promise<boolean>) {
@@ -277,12 +283,20 @@ class CampaignManager {
 
     campaign.results.push(result)
     await campaignStorage.saveCampaign(campaign)
+
+    // Track lead meta
+    if (result.status === 'sent') {
+      void campaignStorage.updateLeadMetaAfterSend(lead.id, campaign.id)
+    }
+
     await this.emitStatus()
 
     // Delay
     const delay = this.calculateDelay(campaign)
     if (delay > 0) {
+      this.delayCallback?.({ totalMs: delay, startedAt: Date.now() })
       await new Promise((resolve) => setTimeout(resolve, delay))
+      this.delayCallback?.(null)
     }
   }
 

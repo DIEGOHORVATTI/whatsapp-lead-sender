@@ -22,6 +22,19 @@ export interface Lead {
   [key: string]: string
 }
 
+export interface LeadMeta {
+  leadId: string
+  campaignIds: string[]
+  sentCount: number
+  responseCount: number
+  lastContactedAt: string
+  lastResponseAt: string
+}
+
+export function normalizePhone(phone: string): string {
+  return phone.replace(/\D/g, '')
+}
+
 export const LEAD_FIELDS: { key: keyof Lead; label: string }[] = [
   { key: 'nome_fantasia', label: 'Nome Fantasia' },
   { key: 'decisor', label: 'Decisor' },

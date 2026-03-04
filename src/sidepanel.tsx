@@ -1,14 +1,19 @@
 import { Component } from 'react'
 import { createRoot } from 'react-dom/client'
-import 'index.css'
+import './index.css'
+import CampaignList from 'components/organisms/CampaignList'
 import CampaignProgress from 'components/organisms/CampaignProgress'
+import ContactsTab from 'components/organisms/ContactsTab'
 import LogTable from 'components/organisms/LogTable'
 import UnifiedEditor from 'components/organisms/UnifiedEditor'
+import ScrollableTabBar from 'components/molecules/ScrollableTabBar'
 import type { Campaign } from 'types/Campaign'
 import { ChromeMessageTypes } from 'types/ChromeMessageTypes'
 import type { Lead } from 'types/Lead'
+import { normalizePhone } from 'types/Lead'
 import AsyncChromeMessageManager from 'utils/AsyncChromeMessageManager'
 import campaignManager from 'utils/CampaignManager'
+import campaignStorage from 'utils/CampaignStorage'
 
 const messageManager = new AsyncChromeMessageManager('sidepanel')
 
@@ -34,7 +39,7 @@ campaignManager.setSendFunction(async (contact: string, message: string) => {
   return result
 })
 
-type Tab = 'progress' | 'campaign' | 'logs'
+type Tab = 'progress' | 'campaigns' | 'contacts' | 'logs'
 
 interface WppStatus {
   ready: boolean
@@ -52,6 +57,8 @@ interface SidePanelState {
   whatsappConnected: boolean
   checkingWhatsApp: boolean
   wppStatus: WppStatus | null
+  delayInfo: { totalMs: number; startedAt: number } | null
+  editorMode: boolean
 }
 
 class SidePanel extends Component<unknown, SidePanelState> {
@@ -60,7 +67,7 @@ class SidePanel extends Component<unknown, SidePanelState> {
   constructor(props: unknown) {
     super(props)
     this.state = {
-      activeTab: 'campaign',
+      activeTab: 'campaigns',
       campaign: null,
       results: [],
       isRunning: false,
@@ -68,6 +75,8 @@ class SidePanel extends Component<unknown, SidePanelState> {
       whatsappConnected: false,
       checkingWhatsApp: true,
       wppStatus: null,
+      delayInfo: null,
+      editorMode: false,
     }
   }
 
@@ -77,10 +86,29 @@ class SidePanel extends Component<unknown, SidePanelState> {
       void this.checkWhatsApp()
       void this.checkWppStatus()
     }, 3000)
+
+    // Listen for incoming messages (responses from contacts)
+    chrome.runtime.onMessage.addListener((msg: { type?: string; payload?: { from?: string } }) => {
+      if (msg.type === ChromeMessageTypes.INCOMING_MESSAGE && msg.payload?.from) {
+        void this.handleIncomingMessage(msg.payload.from)
+      }
+    })
   }
 
   override componentWillUnmount() {
     clearInterval(this.checkInterval)
+  }
+
+  private async handleIncomingMessage(fromPhone: string) {
+    try {
+      const normalized = normalizePhone(fromPhone)
+      const lead = await campaignStorage.getLeadByPhone(normalized)
+      if (lead) {
+        await campaignStorage.updateLeadMetaResponse(lead.id)
+      }
+    } catch {
+      // ignore
+    }
   }
 
   private async checkWppStatus() {
@@ -119,6 +147,8 @@ class SidePanel extends Component<unknown, SidePanelState> {
       isRunning: true,
       isPaused: false,
       activeTab: 'progress',
+      editorMode: false,
+      delayInfo: null,
     })
 
     campaignManager.onStatusChange((updated: Campaign) => {
@@ -130,13 +160,17 @@ class SidePanel extends Component<unknown, SidePanelState> {
       })
     })
 
+    campaignManager.onDelayChange((info) => {
+      this.setState({ delayInfo: info })
+    })
+
     campaignManager
       .start(campaign, leads)
       .then(() => {
-        this.setState({ isRunning: false })
+        this.setState({ isRunning: false, delayInfo: null })
       })
       .catch(() => {
-        this.setState({ isRunning: false })
+        this.setState({ isRunning: false, delayInfo: null })
       })
   }
 
@@ -152,7 +186,7 @@ class SidePanel extends Component<unknown, SidePanelState> {
 
   private handleStop = () => {
     campaignManager.stop()
-    this.setState({ isRunning: false })
+    this.setState({ isRunning: false, delayInfo: null })
   }
 
   private handleBack = () => {
@@ -160,7 +194,8 @@ class SidePanel extends Component<unknown, SidePanelState> {
       campaign: null,
       results: [],
       isRunning: false,
-      activeTab: 'campaign',
+      activeTab: 'campaigns',
+      delayInfo: null,
     })
   }
 
@@ -174,46 +209,36 @@ class SidePanel extends Component<unknown, SidePanelState> {
       whatsappConnected,
       checkingWhatsApp,
       wppStatus,
+      delayInfo,
+      editorMode,
     } = this.state
 
-    const tabs: [Tab, string][] = [
-      ['progress', 'Progresso'],
-      ['campaign', 'Campanha'],
-      ['logs', 'Logs'],
-    ]
-
     const hasActiveCampaign = isRunning || (campaign && results.length > 0)
+
+    const tabs = [
+      { key: 'progress', label: 'Progresso', badge: !!hasActiveCampaign },
+      { key: 'campaigns', label: 'Campanhas' },
+      { key: 'contacts', label: 'Contatos' },
+      { key: 'logs', label: 'Logs' },
+    ]
 
     return (
       <div className="flex flex-col h-screen">
         {/* Tab bar */}
-        <div className="flex border-b border-border bg-card shrink-0">
-          {tabs.map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => {
-                this.setState({ activeTab: key })
-              }}
-              className={`flex-1 px-2 py-2.5 text-xs font-medium border-b-2 transition-colors relative ${
-                activeTab === key
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {label}
-              {key === 'progress' && hasActiveCampaign && (
-                <span className="ml-1 w-1.5 h-1.5 bg-success rounded-full inline-block animate-pulse" />
-              )}
-            </button>
-          ))}
-        </div>
+        <ScrollableTabBar
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={(key) => {
+            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+            this.setState({ activeTab: key as Tab })
+          }}
+        />
 
         {/* Tab content */}
-        <div className="flex-1 overflow-y-auto p-3">
+        <div className="flex-1 overflow-y-auto">
           {/* WhatsApp not connected feedback */}
           {!whatsappConnected && !checkingWhatsApp ? (
-            <div className="flex flex-col items-center justify-center h-full text-center gap-4 py-16">
+            <div className="flex flex-col items-center justify-center h-full text-center gap-4 py-16 p-3">
               <div className="text-4xl opacity-40">📱</div>
               <div>
                 <p className="text-sm font-medium text-foreground">WhatsApp Web não encontrado</p>
@@ -241,7 +266,7 @@ class SidePanel extends Component<unknown, SidePanelState> {
             <>
               {/* WPP Status Banner */}
               {wppStatus && !wppStatus.ready && (
-                <div className="mb-2 flex items-start gap-2 p-2.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300">
+                <div className="mx-3 mt-2 flex items-start gap-2 p-2.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300">
                   <span className="text-base leading-none shrink-0 mt-0.5">&#x1F6A8;</span>
                   <div className="flex flex-col gap-0.5">
                     <span className="text-xs font-medium">WPP não inicializou</span>
@@ -262,7 +287,7 @@ class SidePanel extends Component<unknown, SidePanelState> {
               )}
 
               {wppStatus?.ready && !wppStatus.authenticated && (
-                <div className="mb-2 flex items-start gap-2 p-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300">
+                <div className="mx-3 mt-2 flex items-start gap-2 p-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300">
                   <span className="text-sm leading-none shrink-0">&#x26A0;&#xFE0F;</span>
                   <span className="text-[11px]">
                     WhatsApp não autenticado. Faça login no WhatsApp Web.
@@ -272,16 +297,19 @@ class SidePanel extends Component<unknown, SidePanelState> {
 
               {activeTab === 'progress' &&
                 (hasActiveCampaign && campaign ? (
-                  <CampaignProgress
-                    campaign={campaign}
-                    results={results}
-                    isRunning={isRunning}
-                    isPaused={isPaused}
-                    onPause={this.handlePause}
-                    onResume={this.handleResume}
-                    onStop={this.handleStop}
-                    onBack={this.handleBack}
-                  />
+                  <div className="p-3">
+                    <CampaignProgress
+                      campaign={campaign}
+                      results={results}
+                      isRunning={isRunning}
+                      isPaused={isPaused}
+                      delayInfo={delayInfo}
+                      onPause={this.handlePause}
+                      onResume={this.handleResume}
+                      onStop={this.handleStop}
+                      onBack={this.handleBack}
+                    />
+                  </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center gap-3 py-12">
                     <div className="text-3xl opacity-30">📊</div>
@@ -289,20 +317,53 @@ class SidePanel extends Component<unknown, SidePanelState> {
                     <button
                       type="button"
                       onClick={() => {
-                        this.setState({ activeTab: 'campaign' })
+                        this.setState({ activeTab: 'campaigns' })
                       }}
                       className="text-xs text-primary hover:underline"
                     >
-                      Ir para Campanha
+                      Ir para Campanhas
                     </button>
                   </div>
                 ))}
 
-              {activeTab === 'campaign' && (
-                <UnifiedEditor onCampaignStart={this.handleCampaignStart} />
-              )}
+              {activeTab === 'campaigns' &&
+                (editorMode ? (
+                  <div className="p-3">
+                    <div className="mb-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          this.setState({ editorMode: false })
+                        }}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        ← Voltar para lista
+                      </button>
+                    </div>
+                    <UnifiedEditor onCampaignStart={this.handleCampaignStart} />
+                  </div>
+                ) : (
+                  <CampaignList
+                    onNewCampaign={() => {
+                      this.setState({ editorMode: true })
+                    }}
+                    onSelectCampaign={(c) => {
+                      this.setState({
+                        campaign: c,
+                        results: c.results,
+                        activeTab: 'progress',
+                      })
+                    }}
+                  />
+                ))}
 
-              {activeTab === 'logs' && <LogTable />}
+              {activeTab === 'contacts' && <ContactsTab />}
+
+              {activeTab === 'logs' && (
+                <div className="p-3">
+                  <LogTable />
+                </div>
+              )}
             </>
           )}
         </div>

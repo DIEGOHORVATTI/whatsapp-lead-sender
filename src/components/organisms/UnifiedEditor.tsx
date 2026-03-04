@@ -12,12 +12,14 @@ import type {
 import { DEFAULT_BATCH, DEFAULT_TIMING } from '../../types/Campaign'
 import type { Lead } from '../../types/Lead'
 import campaignManager from '../../utils/CampaignManager'
+import campaignStorage from '../../utils/CampaignStorage'
 import { generateMessage } from '../../utils/aiService'
 import { replaceVariables } from '../../utils/templateEngine'
 import Button from '../atoms/Button'
 import { ControlInput } from '../atoms/ControlFactory'
 import ConfigPanel from '../molecules/ConfigPanel'
 import ContactInput from '../molecules/ContactInput'
+import ContactPickerModal from '../molecules/ContactPickerModal'
 import PreviewBubble from '../molecules/PreviewBubble'
 import VariableToolbar from '../molecules/VariableToolbar'
 
@@ -47,10 +49,18 @@ interface UnifiedEditorState {
   fullPreviewResults: CampaignResult[]
   fullPreviewLoading: boolean
   fullPreviewSearch: string
+
+  // Schedule check
+  outsideSchedule: boolean
+  scheduleReason: string
+
+  // Contact picker
+  showContactPicker: boolean
 }
 
 export default class UnifiedEditor extends Component<UnifiedEditorProps, UnifiedEditorState> {
   private textareaRefs: Record<string, RefObject<HTMLTextAreaElement>> = {}
+  private scheduleCheckInterval: ReturnType<typeof setInterval> | null = null
 
   constructor(props: UnifiedEditorProps) {
     super(props)
@@ -78,16 +88,91 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
       fullPreviewResults: [],
       fullPreviewLoading: false,
       fullPreviewSearch: '',
+      outsideSchedule: false,
+      scheduleReason: '',
+      showContactPicker: false,
     }
   }
 
   override componentDidMount() {
-    chrome.storage.local.get(['aiConfig'], (data: Record<string, unknown>) => {
-      if (data['aiConfig']) {
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-        this.setState({ aiConfig: data['aiConfig'] as AIConfig })
+    chrome.storage.local.get(
+      ['aiConfig', 'editorTiming', 'editorBatch', 'editorName', 'editorVariants'],
+      (data: Record<string, unknown>) => {
+        const updates: Partial<UnifiedEditorState> = {}
+        if (data['aiConfig']) {
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          updates.aiConfig = data['aiConfig'] as AIConfig
+        }
+        if (data['editorTiming']) {
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          updates.timing = data['editorTiming'] as TimingConfig
+        }
+        if (data['editorBatch']) {
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          updates.batch = data['editorBatch'] as BatchConfig
+        }
+        if (data['editorName']) {
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          updates.name = data['editorName'] as string
+        }
+        if (data['editorVariants']) {
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          updates.variants = data['editorVariants'] as MessageVariant[]
+        }
+        if (Object.keys(updates).length > 0) {
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          this.setState(updates as UnifiedEditorState, () => {
+            this.checkSchedule()
+          })
+        } else {
+          this.checkSchedule()
+        }
       }
-    })
+    )
+    this.scheduleCheckInterval = setInterval(() => {
+      this.checkSchedule()
+    }, 60_000)
+  }
+
+  override componentWillUnmount() {
+    if (this.scheduleCheckInterval) {
+      clearInterval(this.scheduleCheckInterval)
+    }
+  }
+
+  private checkSchedule() {
+    const { timing } = this.state
+    const { schedule } = timing
+    if (!schedule.enabled) {
+      this.setState({ outsideSchedule: false, scheduleReason: '' })
+      return
+    }
+    const now = new Date()
+    const hour = now.getHours()
+    const day = now.getDay()
+    const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+    const allowedDays = schedule.daysOfWeek.map((d) => dayNames[d]).join(', ')
+
+    if (!schedule.daysOfWeek.includes(day)) {
+      this.setState({
+        outsideSchedule: true,
+        scheduleReason: `Hoje (${dayNames[day]}) não é um dia permitido. Dias permitidos: ${allowedDays}.`,
+      })
+      return
+    }
+    if (hour < schedule.startHour || hour >= schedule.endHour) {
+      this.setState({
+        outsideSchedule: true,
+        scheduleReason: `Fora do horário permitido (${String(schedule.startHour)}h às ${String(schedule.endHour)}h). Horário atual: ${String(hour)}h.`,
+      })
+      return
+    }
+    this.setState({ outsideSchedule: false, scheduleReason: '' })
+  }
+
+  private persistConfig(partial: Partial<Record<string, unknown>> = {}) {
+    const toSave: Record<string, unknown> = { ...partial }
+    void chrome.storage.local.set(toSave)
   }
 
   // --- Variant management ---
@@ -96,17 +181,17 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
     const { variants } = this.state
     if (variants.length >= 4) return
     const letter = String.fromCharCode(65 + variants.length)
-    this.setState({
-      variants: [
-        ...variants,
-        {
-          id: crypto.randomUUID(),
-          name: `Variante ${letter}`,
-          template: '',
-          useAI: false,
-        },
-      ],
-    })
+    const newVariants = [
+      ...variants,
+      {
+        id: crypto.randomUUID(),
+        name: `Variante ${letter}`,
+        template: '',
+        useAI: false,
+      },
+    ]
+    this.setState({ variants: newVariants })
+    this.persistConfig({ editorVariants: newVariants })
   }
 
   private removeVariant = (index: number) => {
@@ -115,13 +200,16 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
       variants,
       activeVariantIndex: Math.min(this.state.activeVariantIndex, variants.length - 1),
     })
+    this.persistConfig({ editorVariants: variants })
   }
 
   private updateVariant = (index: number, updates: Partial<MessageVariant>) => {
+    const variants = this.state.variants.map((v, i) => (i === index ? { ...v, ...updates } : v))
     this.setState({
-      variants: this.state.variants.map((v, i) => (i === index ? { ...v, ...updates } : v)),
+      variants,
       aiPreviewMessage: '',
     })
+    this.persistConfig({ editorVariants: variants })
   }
 
   private insertVariable = (variable: string) => {
@@ -211,7 +299,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
 
   private handleAIConfigChange = (config: AIConfig) => {
     this.setState({ aiConfig: config })
-    void chrome.storage.local.set({ aiConfig: config })
+    this.persistConfig({ aiConfig: config })
   }
 
   override render() {
@@ -297,9 +385,11 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                 ))}
               </div>
               <div className="flex gap-2">
-                <Button variant="primary" onClick={this.handleStart} className="text-xs flex-1">
-                  Iniciar
-                </Button>
+                <span className="flex-1" title={this.state.outsideSchedule ? this.state.scheduleReason : undefined}>
+                  <Button variant="primary" onClick={this.handleStart} disabled={this.state.outsideSchedule} className="text-xs w-full">
+                    Iniciar
+                  </Button>
+                </span>
                 <Button
                   variant="secondary"
                   onClick={() => {
@@ -324,21 +414,53 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
           value={name}
           onChange={(e) => {
             this.setState({ name: e.target.value })
+            this.persistConfig({ editorName: e.target.value })
           }}
           placeholder="Nome da campanha"
           className="text-sm"
         />
 
         {/* Contact input */}
-        <ContactInput
-          onLeadsChange={(newLeads) => {
-            this.setState({
-              leads: newLeads,
-              previewLeadIndex: 0,
-              aiPreviewMessage: '',
-            })
-          }}
-        />
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                this.setState({ showContactPicker: true })
+              }}
+              className="text-xs flex-1"
+            >
+              Selecionar Contatos Salvos {leads.length > 0 ? `(${leads.length})` : ''}
+            </Button>
+          </div>
+          <ContactInput
+            onLeadsChange={(newLeads) => {
+              this.setState({
+                leads: newLeads,
+                previewLeadIndex: 0,
+                aiPreviewMessage: '',
+              })
+              // Save imported leads to IDB for persistence
+              void campaignStorage.saveLeadsDedup(newLeads)
+            }}
+          />
+        </div>
+
+        {this.state.showContactPicker && (
+          <ContactPickerModal
+            onSelect={(selectedLeads) => {
+              this.setState({
+                leads: selectedLeads,
+                previewLeadIndex: 0,
+                aiPreviewMessage: '',
+                showContactPicker: false,
+              })
+            }}
+            onClose={() => {
+              this.setState({ showContactPicker: false })
+            }}
+          />
+        )}
 
         {/* Config Panel */}
         <ConfigPanel
@@ -347,10 +469,14 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
           aiConfig={aiConfig}
           attachment={attachment}
           onTimingChange={(t) => {
-            this.setState({ timing: t })
+            this.setState({ timing: t }, () => {
+              this.checkSchedule()
+            })
+            this.persistConfig({ editorTiming: t })
           }}
           onBatchChange={(b) => {
             this.setState({ batch: b })
+            this.persistConfig({ editorBatch: b })
           }}
           onAIConfigChange={this.handleAIConfigChange}
           onAttachmentChange={(a) => {
@@ -555,14 +681,16 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
 
         {/* Actions */}
         <div className="flex items-center gap-2 pt-2 border-t border-border">
-          <Button
-            variant="primary"
-            onClick={this.handleStart}
-            disabled={leads.length === 0 || variants.every((v) => !v.template.trim())}
-            className="text-xs flex-1"
-          >
-            Iniciar Campanha
-          </Button>
+          <span className="flex-1" title={this.state.outsideSchedule ? this.state.scheduleReason : undefined}>
+            <Button
+              variant="primary"
+              onClick={this.handleStart}
+              disabled={leads.length === 0 || variants.every((v) => !v.template.trim()) || this.state.outsideSchedule}
+              className="text-xs w-full"
+            >
+              Iniciar Campanha
+            </Button>
+          </span>
           <Button
             variant="secondary"
             onClick={() => void this.handleFullPreview()}

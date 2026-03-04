@@ -50,10 +50,10 @@
   "ignorePatterns": [
     "dist/",
     "node_modules/",
-    "playwright.config.ts",
     "postcss.config.js",
     "tailwind.config.js",
     "tests/",
-    "webpack.config.js"
+    "scripts/",
+    "vite.config.ts"
   ]
 }

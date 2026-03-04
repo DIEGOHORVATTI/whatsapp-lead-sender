@@ -25,3 +25,15 @@ ContentScriptMessageManager.addHandler(ChromeMessageTypes.ADD_LOG, (log) => {
     return false
   }
 })
+
+ContentScriptMessageManager.addHandler(ChromeMessageTypes.INCOMING_MESSAGE, (data) => {
+  try {
+    void chrome.runtime.sendMessage({
+      type: ChromeMessageTypes.INCOMING_MESSAGE,
+      payload: data,
+    })
+    return true
+  } catch {
+    return false
+  }
+})
