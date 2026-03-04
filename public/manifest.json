@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_appName__",
-  "version": "3.7.23",
+  "version": "3.7.26",
   "action": {
     "default_icon": {
       "16": "icons/wtf16.png",
@@ -46,12 +46,23 @@
     },
     {
       "js": [
+        "js/wppconnect-wa.js"
+      ],
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    },
+    {
+      "js": [
         "js/wa-js.js"
       ],
       "matches": [
         "https://web.whatsapp.com/*"
       ],
-      "world": "MAIN"
+      "world": "MAIN",
+      "run_at": "document_idle"
     }
   ],
   "externally_connectable": {

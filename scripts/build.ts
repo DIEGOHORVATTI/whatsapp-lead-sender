@@ -84,6 +84,13 @@ async function main() {
   // Copy public assets to dist root
   cpSync(resolve(root, 'public'), distDir, { recursive: true })
 
+  // Copy pre-built wppconnect-wa.js (must NOT be re-bundled — needs direct global scope access)
+  cpSync(
+    resolve(root, 'node_modules/@wppconnect/wa-js/dist/wppconnect-wa.js'),
+    resolve(outDir, 'wppconnect-wa.js')
+  )
+  console.log('  Copied wppconnect-wa.js (pre-built)')
+
   // Build all entries sequentially (IIFE format requires single entry per build)
   for (const entry of entries) {
     await buildEntry(entry)
