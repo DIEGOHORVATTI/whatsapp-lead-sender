@@ -343,7 +343,16 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
 
   private handleStart = () => {
     const { name, variants, timing, batch, leads, aiConfig } = this.state
+    const ic = this.props.initialCampaign
     const campaign = campaignManager.createCampaign(name, leads, variants)
+    // Reuse existing campaign ID to avoid duplicating
+    if (ic?.id) {
+      campaign.id = ic.id
+      campaign.results = ic.results ?? []
+      campaign.dailySentCount = ic.dailySentCount ?? 0
+      campaign.dailyResetDate = ic.dailyResetDate ?? campaign.dailyResetDate
+      campaign.createdAt = ic.createdAt ?? campaign.createdAt
+    }
     campaign.timing = timing
     campaign.batch = batch
     campaignManager.setAIConfig(aiConfig)
