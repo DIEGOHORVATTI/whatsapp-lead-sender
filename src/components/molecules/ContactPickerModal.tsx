@@ -349,7 +349,9 @@ export default class ContactPickerModal extends Component<
                         <td className="p-1.5 text-center">
                           <input type="checkbox" checked={selectedIds.has(lead.id)} readOnly />
                         </td>
-                        <td className="p-1.5 truncate max-w-24">{toTitleCase(lead.nome_fantasia)}</td>
+                        <td className="p-1.5 truncate max-w-24">
+                          {toTitleCase(lead.nome_fantasia)}
+                        </td>
                         <td className="p-1.5 truncate max-w-20">{toTitleCase(lead.decisor)}</td>
                         <td className="p-1.5 font-mono text-[11px]">
                           {formatPhoneDisplay(lead.telefone)}

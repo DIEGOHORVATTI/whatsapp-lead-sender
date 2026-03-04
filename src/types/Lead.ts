@@ -35,7 +35,22 @@ export function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, '')
 }
 
-const LOWERCASE_WORDS = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'nas', 'nos', 'para', 'por', 'com'])
+const LOWERCASE_WORDS = new Set([
+  'de',
+  'da',
+  'do',
+  'das',
+  'dos',
+  'e',
+  'em',
+  'na',
+  'no',
+  'nas',
+  'nos',
+  'para',
+  'por',
+  'com',
+])
 
 export function toTitleCase(text: string): string {
   if (!text) return text

@@ -807,13 +807,17 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                   {previewLead.nome_fantasia && (
                     <>
                       <span className="text-muted-foreground">{t('name')}:</span>
-                      <span className="font-medium truncate">{toTitleCase(previewLead.nome_fantasia)}</span>
+                      <span className="font-medium truncate">
+                        {toTitleCase(previewLead.nome_fantasia)}
+                      </span>
                     </>
                   )}
                   {previewLead.decisor && (
                     <>
                       <span className="text-muted-foreground">{t('decision_maker')}:</span>
-                      <span className="font-medium truncate">{toTitleCase(previewLead.decisor)}</span>
+                      <span className="font-medium truncate">
+                        {toTitleCase(previewLead.decisor)}
+                      </span>
                     </>
                   )}
                   {previewLead.segmento && (

@@ -308,9 +308,15 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
                             <td className="p-1 text-center">
                               <input type="checkbox" checked={selectedRows.has(idx)} readOnly />
                             </td>
-                            <td className="p-1 truncate max-w-32">{toTitleCase(mapped['nome_fantasia'] ?? '')}</td>
-                            <td className="p-1 truncate max-w-24">{toTitleCase(mapped['decisor'] ?? '')}</td>
-                            <td className="p-1 truncate max-w-24">{toTitleCase(mapped['segmento'] ?? '')}</td>
+                            <td className="p-1 truncate max-w-32">
+                              {toTitleCase(mapped['nome_fantasia'] ?? '')}
+                            </td>
+                            <td className="p-1 truncate max-w-24">
+                              {toTitleCase(mapped['decisor'] ?? '')}
+                            </td>
+                            <td className="p-1 truncate max-w-24">
+                              {toTitleCase(mapped['segmento'] ?? '')}
+                            </td>
                             <td className="p-1">{mapped['telefone']}</td>
                             <td className="p-1">{toTitleCase(mapped['cidade'] ?? '')}</td>
                           </tr>
