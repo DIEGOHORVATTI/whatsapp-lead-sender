@@ -54,6 +54,7 @@
     "tailwind.config.js",
     "tests/",
     "scripts/",
-    "vite.config.ts"
+    "vite.config.ts",
+    "vitest.config.mts"
   ]
 }

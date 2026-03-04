@@ -52,7 +52,7 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
     const values = new Set<string>()
     for (const lead of this.state.leads) {
       const val = lead[field]
-      if (val && val.trim()) values.add(val.trim())
+      if (val?.trim()) values.add(val.trim())
     }
     return Array.from(values).sort()
   }
@@ -63,10 +63,10 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
     return leads.filter((lead) => {
       if (s) {
         const match =
-          (lead.nome_fantasia ?? '').toLowerCase().includes(s) ||
-          (lead.decisor ?? '').toLowerCase().includes(s) ||
-          (lead.telefone ?? '').includes(s) ||
-          (lead.segmento ?? '').toLowerCase().includes(s)
+          lead.nome_fantasia.toLowerCase().includes(s) ||
+          lead.decisor.toLowerCase().includes(s) ||
+          lead.telefone.includes(s) ||
+          lead.segmento.toLowerCase().includes(s)
         if (!match) return false
       }
       const filterKeys = Object.keys(filters)
@@ -125,10 +125,7 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
             { label: 'Respostas', value: totalResponses },
             { label: 'Campanhas', value: campaignSet.size },
           ].map(({ label, value }) => (
-            <div
-              key={label}
-              className="bg-muted rounded-lg p-2 text-center"
-            >
+            <div key={label} className="bg-muted rounded-lg p-2 text-center">
               <div className="text-lg font-bold text-foreground">{value}</div>
               <div className="text-[10px] text-muted-foreground">{label}</div>
             </div>
@@ -153,14 +150,10 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
             }}
             className="text-xs"
           >
-            Filtros {activeFilters.length > 0 ? `(${activeFilters.length})` : ''}
+            Filtros {activeFilters.length > 0 ? `(${String(activeFilters.length)})` : ''}
           </Button>
           {selectedIds.size > 0 && (
-            <Button
-              variant="danger"
-              onClick={() => void this.handleDelete()}
-              className="text-xs"
-            >
+            <Button variant="danger" onClick={() => void this.handleDelete()} className="text-xs">
               Excluir ({selectedIds.size})
             </Button>
           )}
@@ -236,7 +229,10 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
 
         {/* Info */}
         <div className="text-xs text-muted-foreground">
-          {filtered.length} contatos{filtered.length !== this.state.leads.length ? ` (de ${this.state.leads.length})` : ''}
+          {filtered.length} contatos
+          {filtered.length !== this.state.leads.length
+            ? ` (de ${String(this.state.leads.length)})`
+            : ''}
         </div>
 
         {/* Table */}
@@ -275,17 +271,14 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
                       }}
                     >
                       <td className="p-1.5 text-center">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(lead.id)}
-                          readOnly
-                        />
+                        <input type="checkbox" checked={selectedIds.has(lead.id)} readOnly />
                       </td>
                       <td className="p-1.5 truncate max-w-24">{lead.nome_fantasia}</td>
                       <td className="p-1.5 truncate max-w-20">{lead.decisor}</td>
                       <td className="p-1.5 truncate max-w-20">{lead.segmento}</td>
                       <td className="p-1.5 truncate max-w-16">
-                        {lead.cidade}{lead.uf ? `/${lead.uf}` : ''}
+                        {lead.cidade}
+                        {lead.uf ? `/${lead.uf}` : ''}
                       </td>
                       <td className="p-1.5 font-mono">{lead.telefone}</td>
                       <td className="p-1.5 text-center">{m?.sentCount ?? 0}</td>

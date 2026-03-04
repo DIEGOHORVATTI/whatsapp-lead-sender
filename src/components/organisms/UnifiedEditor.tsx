@@ -156,7 +156,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
     if (!schedule.daysOfWeek.includes(day)) {
       this.setState({
         outsideSchedule: true,
-        scheduleReason: `Hoje (${dayNames[day]}) não é um dia permitido. Dias permitidos: ${allowedDays}.`,
+        scheduleReason: `Hoje (${dayNames[day] ?? ''}) não é um dia permitido. Dias permitidos: ${allowedDays}.`,
       })
       return
     }
@@ -385,8 +385,16 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                 ))}
               </div>
               <div className="flex gap-2">
-                <span className="flex-1" title={this.state.outsideSchedule ? this.state.scheduleReason : undefined}>
-                  <Button variant="primary" onClick={this.handleStart} disabled={this.state.outsideSchedule} className="text-xs w-full">
+                <span
+                  className="flex-1"
+                  title={this.state.outsideSchedule ? this.state.scheduleReason : undefined}
+                >
+                  <Button
+                    variant="primary"
+                    onClick={this.handleStart}
+                    disabled={this.state.outsideSchedule}
+                    className="text-xs w-full"
+                  >
                     Iniciar
                   </Button>
                 </span>
@@ -430,7 +438,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
               }}
               className="text-xs flex-1"
             >
-              Selecionar Contatos Salvos {leads.length > 0 ? `(${leads.length})` : ''}
+              Selecionar Contatos Salvos {leads.length > 0 ? `(${String(leads.length)})` : ''}
             </Button>
           </div>
           <ContactInput
@@ -681,11 +689,18 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
 
         {/* Actions */}
         <div className="flex items-center gap-2 pt-2 border-t border-border">
-          <span className="flex-1" title={this.state.outsideSchedule ? this.state.scheduleReason : undefined}>
+          <span
+            className="flex-1"
+            title={this.state.outsideSchedule ? this.state.scheduleReason : undefined}
+          >
             <Button
               variant="primary"
               onClick={this.handleStart}
-              disabled={leads.length === 0 || variants.every((v) => !v.template.trim()) || this.state.outsideSchedule}
+              disabled={
+                leads.length === 0 ||
+                variants.every((v) => !v.template.trim()) ||
+                this.state.outsideSchedule
+              }
               className="text-xs w-full"
             >
               Iniciar Campanha

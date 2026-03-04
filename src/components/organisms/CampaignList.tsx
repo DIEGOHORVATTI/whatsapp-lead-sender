@@ -15,9 +15,18 @@ interface CampaignListState {
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   draft: { label: 'Rascunho', className: 'bg-muted text-muted-foreground' },
-  running: { label: 'Em execução', className: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' },
-  paused: { label: 'Pausada', className: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300' },
-  completed: { label: 'Concluída', className: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' },
+  running: {
+    label: 'Em execução',
+    className: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+  },
+  paused: {
+    label: 'Pausada',
+    className: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+  },
+  completed: {
+    label: 'Concluída',
+    className: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+  },
   preview: { label: 'Preview', className: 'bg-muted text-muted-foreground' },
 }
 
@@ -72,7 +81,11 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
             const sent = c.results.filter((r) => r.status === 'sent').length
             const failed = c.results.filter((r) => r.status === 'failed').length
             const total = c.leadIds.length
-            const statusInfo = (STATUS_LABELS[c.status] ?? STATUS_LABELS['draft']) as { label: string; className: string }
+            const statusInfo = STATUS_LABELS[c.status] ??
+              STATUS_LABELS['draft'] ?? {
+                label: c.status,
+                className: '',
+              }
 
             return (
               <div
@@ -102,8 +115,12 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
                 </div>
                 <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                   <span>{total} contatos</span>
-                  {sent > 0 && <span className="text-green-600 dark:text-green-400">{sent} enviadas</span>}
-                  {failed > 0 && <span className="text-red-600 dark:text-red-400">{failed} falhas</span>}
+                  {sent > 0 && (
+                    <span className="text-green-600 dark:text-green-400">{sent} enviadas</span>
+                  )}
+                  {failed > 0 && (
+                    <span className="text-red-600 dark:text-red-400">{failed} falhas</span>
+                  )}
                   <span className="ml-auto">
                     {new Date(c.createdAt).toLocaleDateString('pt-BR')}
                   </span>

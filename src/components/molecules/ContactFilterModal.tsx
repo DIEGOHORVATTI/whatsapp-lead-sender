@@ -18,7 +18,10 @@ interface ContactFilterModalState {
 
 const FILTERABLE_FIELDS = ['segmento', 'cidade', 'uf', 'porte', 'bairro', 'cnae', 'cargo'] as const
 
-export default class ContactFilterModal extends Component<ContactFilterModalProps, ContactFilterModalState> {
+export default class ContactFilterModal extends Component<
+  ContactFilterModalProps,
+  ContactFilterModalState
+> {
   constructor(props: ContactFilterModalProps) {
     super(props)
     this.state = { filters: {}, search: '' }
@@ -28,7 +31,7 @@ export default class ContactFilterModal extends Component<ContactFilterModalProp
     const values = new Set<string>()
     for (const lead of this.props.leads) {
       const val = lead[field]
-      if (val && val.trim()) values.add(val.trim())
+      if (val?.trim()) values.add(val.trim())
     }
     return Array.from(values).sort()
   }
@@ -42,9 +45,9 @@ export default class ContactFilterModal extends Component<ContactFilterModalProp
       // Text search
       if (searchLower) {
         const matchesSearch =
-          (lead.nome_fantasia ?? '').toLowerCase().includes(searchLower) ||
-          (lead.decisor ?? '').toLowerCase().includes(searchLower) ||
-          (lead.telefone ?? '').includes(searchLower)
+          lead.nome_fantasia.toLowerCase().includes(searchLower) ||
+          lead.decisor.toLowerCase().includes(searchLower) ||
+          lead.telefone.includes(searchLower)
         if (!matchesSearch) return false
       }
       // Field filters

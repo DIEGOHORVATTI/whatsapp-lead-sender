@@ -1,9 +1,9 @@
 ---
 name: Pull Request
 about: Propose changes to the codebase
-title: "[PR]"
-labels: ""
-assignees: ""
+title: '[PR]'
+labels: ''
+assignees: ''
 ---
 
 <!-- Thank you for contributing! Please ensure you follow the guidelines below before submitting your pull request. -->

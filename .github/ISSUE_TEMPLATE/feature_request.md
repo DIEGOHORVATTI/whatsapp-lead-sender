@@ -1,9 +1,9 @@
 ---
 name: Feature Request
 about: Suggest an idea for this project
-title: "[FEATURE]"
+title: '[FEATURE]'
 labels: enhancement
-assignees: ""
+assignees: ''
 ---
 
 <!-- Thank you for taking the time to suggest an idea for this project. We appreciate your input and encourage you to provide as much detail as possible to help us understand your vision and evaluate the request. -->

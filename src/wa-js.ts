@@ -8,6 +8,9 @@ import storageManager, { AsyncStorageManager } from 'utils/AsyncStorageManager'
 declare global {
   interface Window {
     WPP: typeof WPP
+    __WTF_INJECTED__?: boolean
+    webpackChunkwhatsapp_web_client?: unknown[]
+    __webpack_require__?: unknown
   }
 }
 
@@ -47,15 +50,13 @@ function sleep(ms: number): Promise<void> {
 }
 
 // Guard: prevent duplicate injection across reloads/re-runs
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-if ((window as any).__WTF_INJECTED__) {
+if (window.__WTF_INJECTED__) {
   dbg('Já injetado, ignorando re-execução')
 } else if (reloadCount >= MAX_RETRIES) {
   wppError = `Parou após ${String(MAX_RETRIES)} tentativas de reload. Recarregue a página manualmente.`
   dbgErr(wppError)
 } else {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(window as any).__WTF_INJECTED__ = true
+  window.__WTF_INJECTED__ = true
   sessionStorage.setItem(RELOAD_KEY, String(reloadCount + 1))
   dbg('Inicializando... tentativa', reloadCount + 1, 'de', MAX_RETRIES)
 
@@ -284,15 +285,13 @@ if ((window as any).__WTF_INJECTED__) {
   const waitForWebpack = (): Promise<void> => {
     return new Promise((resolve) => {
       // Check if webpack chunks array already exists
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const win = window as any
-      if (win.webpackChunkwhatsapp_web_client || win.__webpack_require__) {
+      if (window.webpackChunkwhatsapp_web_client ?? window.__webpack_require__) {
         resolve()
         return
       }
       dbg('Aguardando webpack do WhatsApp carregar...')
       const observer = new MutationObserver(() => {
-        if (win.webpackChunkwhatsapp_web_client || win.__webpack_require__) {
+        if (window.webpackChunkwhatsapp_web_client ?? window.__webpack_require__) {
           observer.disconnect()
           resolve()
         }
@@ -311,40 +310,47 @@ if ((window as any).__WTF_INJECTED__) {
     dbg('Webpack detectado, iniciando injeção...')
 
     for (let attempt = 1; attempt <= INJECT_MAX_ATTEMPTS; attempt++) {
-      dbg(`Chamando WPP.webpack.injectLoader()... tentativa ${attempt}/${INJECT_MAX_ATTEMPTS}`)
+      dbg(
+        `Chamando WPP.webpack.injectLoader()... tentativa ${String(attempt)}/${String(INJECT_MAX_ATTEMPTS)}`
+      )
       try {
-        WPP.webpack.injectLoader()
+        WPP.webpack.injectLoader() // eslint-disable-line import/no-named-as-default-member
         wppInjected = true
         dbg('injectLoader() OK ✓')
         return
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
-        dbgErr(`injectLoader falhou (tentativa ${attempt}):`, msg)
+        dbgErr(`injectLoader falhou (tentativa ${String(attempt)}):`, msg)
         if (attempt < INJECT_MAX_ATTEMPTS) {
           const delay = INJECT_RETRY_DELAY_MS * attempt // backoff progressivo
-          dbg(`Aguardando ${delay}ms antes de re-tentar...`)
+          dbg(`Aguardando ${String(delay)}ms antes de re-tentar...`)
           await sleep(delay)
         }
       }
     }
     // All in-page retries exhausted — reload as last resort
-    wppError = `injectLoader falhou após ${INJECT_MAX_ATTEMPTS} tentativas`
+    wppError = `injectLoader falhou após ${String(INJECT_MAX_ATTEMPTS)} tentativas`
     dbgErr(wppError, '→ recarregando página')
     window.location.reload()
   }
 
   void tryInject()
 
+  // eslint-disable-next-line import/no-named-as-default-member
   WPP.webpack.onReady(() => {
     wppReady = true
     sessionStorage.removeItem(RELOAD_KEY)
     dbg('WPP PRONTO ✓ | isAuthenticated:', window.WPP.conn.isAuthenticated())
 
     // Listen for incoming messages to track responses
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    window.WPP.on('chat.new_message', (msg: any) => {
+    window.WPP.on('chat.new_message', (msg) => {
       try {
-        if (!msg.id?.fromMe && !msg.isGroupMsg && msg.type === 'chat') {
+        if (
+          !msg.id.fromMe &&
+          !msg.isSentByMe &&
+          msg.type === 'chat' &&
+          !String(msg.from ?? '').includes('@g.us')
+        ) {
           const phone = String(msg.from ?? '').replace(/@.*$/, '')
           if (phone) {
             dbg('Incoming message from:', phone)

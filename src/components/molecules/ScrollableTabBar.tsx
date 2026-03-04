@@ -17,7 +17,10 @@ interface ScrollableTabBarState {
   showRight: boolean
 }
 
-export default class ScrollableTabBar extends Component<ScrollableTabBarProps, ScrollableTabBarState> {
+export default class ScrollableTabBar extends Component<
+  ScrollableTabBarProps,
+  ScrollableTabBarState
+> {
   private containerRef: RefObject<HTMLDivElement> = createRef<HTMLDivElement>()
 
   constructor(props: ScrollableTabBarProps) {

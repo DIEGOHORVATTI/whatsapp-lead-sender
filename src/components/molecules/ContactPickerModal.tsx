@@ -21,7 +21,10 @@ interface ContactPickerModalState {
 
 const FILTERABLE_FIELDS = ['segmento', 'cidade', 'uf', 'porte', 'bairro', 'cnae'] as const
 
-export default class ContactPickerModal extends Component<ContactPickerModalProps, ContactPickerModalState> {
+export default class ContactPickerModal extends Component<
+  ContactPickerModalProps,
+  ContactPickerModalState
+> {
   constructor(props: ContactPickerModalProps) {
     super(props)
     this.state = {
@@ -53,7 +56,7 @@ export default class ContactPickerModal extends Component<ContactPickerModalProp
     const values = new Set<string>()
     for (const lead of this.state.leads) {
       const val = lead[field]
-      if (val && val.trim()) values.add(val.trim())
+      if (val?.trim()) values.add(val.trim())
     }
     return Array.from(values).sort()
   }
@@ -64,9 +67,9 @@ export default class ContactPickerModal extends Component<ContactPickerModalProp
     return leads.filter((lead) => {
       if (s) {
         const match =
-          (lead.nome_fantasia ?? '').toLowerCase().includes(s) ||
-          (lead.decisor ?? '').toLowerCase().includes(s) ||
-          (lead.telefone ?? '').includes(s)
+          lead.nome_fantasia.toLowerCase().includes(s) ||
+          lead.decisor.toLowerCase().includes(s) ||
+          lead.telefone.includes(s)
         if (!match) return false
       }
       const filterKeys = Object.keys(filters)
@@ -146,7 +149,8 @@ export default class ContactPickerModal extends Component<ContactPickerModalProp
                     className="flex-1 px-2 py-1.5 text-xs border border-input rounded-lg bg-muted text-foreground placeholder:text-muted-foreground"
                   />
                   <Button variant="light" onClick={this.toggleAll} className="text-xs">
-                    {filtered.every((l) => selectedIds.has(l.id)) ? 'Desmarcar' : 'Selecionar'} todos
+                    {filtered.every((l) => selectedIds.has(l.id)) ? 'Desmarcar' : 'Selecionar'}{' '}
+                    todos
                   </Button>
                 </div>
 
@@ -237,7 +241,8 @@ export default class ContactPickerModal extends Component<ContactPickerModalProp
                         <td className="p-1.5 truncate max-w-20">{lead.decisor}</td>
                         <td className="p-1.5 truncate max-w-20">{lead.segmento}</td>
                         <td className="p-1.5 truncate max-w-16">
-                          {lead.cidade}{lead.uf ? `/${lead.uf}` : ''}
+                          {lead.cidade}
+                          {lead.uf ? `/${lead.uf}` : ''}
                         </td>
                         <td className="p-1.5 font-mono">{lead.telefone}</td>
                       </tr>

@@ -24,7 +24,8 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
   }
 
   override render() {
-    const { campaign, results, isRunning, isPaused, delayInfo, onPause, onResume, onStop, onBack } = this.props
+    const { campaign, results, isRunning, isPaused, delayInfo, onPause, onResume, onStop, onBack } =
+      this.props
 
     const sent = results.filter((r) => r.status === 'sent').length
     const failed = results.filter((r) => r.status === 'failed').length

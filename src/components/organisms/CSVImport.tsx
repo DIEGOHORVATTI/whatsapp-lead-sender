@@ -78,7 +78,9 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
   private applyRange = () => {
     const { allRows, lineStart, lineEnd } = this.state
     const start = Math.max(0, parseInt(lineStart, 10) || 0)
-    const end = lineEnd ? Math.min(allRows.length, parseInt(lineEnd, 10) || allRows.length) : allRows.length
+    const end = lineEnd
+      ? Math.min(allRows.length, parseInt(lineEnd, 10) || allRows.length)
+      : allRows.length
     const rows = allRows.slice(start, end)
     const allSelected = new Set(rows.map((_: Record<string, string>, i: number) => i))
     this.setState({ rows, selectedRows: allSelected })
