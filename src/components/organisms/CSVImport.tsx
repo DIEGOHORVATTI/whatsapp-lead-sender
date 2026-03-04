@@ -1,8 +1,8 @@
 import { Component, createRef, type RefObject } from 'react'
-import { t } from '../../utils/i18n'
 import type { Lead } from '../../types/Lead'
 import { LEAD_FIELDS } from '../../types/Lead'
 import { autoMapColumns, mapRowsToLeads, parseCSV } from '../../utils/csvParser'
+import { t } from '../../utils/i18n'
 import Button from '../atoms/Button'
 import { ControlSelect } from '../atoms/ControlFactory'
 import Box from '../molecules/Box'
@@ -267,7 +267,9 @@ export default class CSVImport extends Component<CSVImportProps, CSVImportState>
                     ? t('deselect_all')
                     : t('select_all')}
                 </Button>
-                <span className="text-xs text-slate-500">{selectedRows.size} {t('selected')}</span>
+                <span className="text-xs text-slate-500">
+                  {selectedRows.size} {t('selected')}
+                </span>
               </div>
               <div className="overflow-auto max-h-64 border border-slate-200 dark:border-slate-700 rounded">
                 <table className="w-full text-xs">

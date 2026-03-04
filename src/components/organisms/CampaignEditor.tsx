@@ -1,5 +1,4 @@
 import { Component, createRef, type RefObject } from 'react'
-import { t } from '../../utils/i18n'
 import type { AIConfig } from '../../types/AIConfig'
 import { AI_MODELS, DEFAULT_AI_CONFIG } from '../../types/AIConfig'
 import type {
@@ -12,6 +11,7 @@ import type {
 import { DEFAULT_BATCH, DEFAULT_TIMING } from '../../types/Campaign'
 import type { Lead } from '../../types/Lead'
 import campaignManager from '../../utils/CampaignManager'
+import { t } from '../../utils/i18n'
 import Button from '../atoms/Button'
 import { ControlInput, ControlSelect, ControlTextArea } from '../atoms/ControlFactory'
 import Box from '../molecules/Box'
@@ -47,7 +47,9 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
           name: t('variant_a'),
           template:
             'Olá {decisor}! Vi que a {nome_fantasia} atua em {segmento} em {cidade}. Temos uma solução que reduz faltas de pacientes em até 70%. Posso te mostrar?',
-          templates: ['Olá {decisor}! Vi que a {nome_fantasia} atua em {segmento} em {cidade}. Temos uma solução que reduz faltas de pacientes em até 70%. Posso te mostrar?'],
+          templates: [
+            'Olá {decisor}! Vi que a {nome_fantasia} atua em {segmento} em {cidade}. Temos uma solução que reduz faltas de pacientes em até 70%. Posso te mostrar?',
+          ],
           useAI: false,
         },
       ],
@@ -248,9 +250,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
                     rows={4}
                     className="w-full flex-auto bg-slate-100 dark:bg-slate-900 border border-slate-400 dark:border-slate-600 p-1 rounded-lg transition-shadow ease-in-out duration-150 focus:shadow-equal focus:shadow-blue-800 dark:focus:shadow-blue-200 focus:outline-none mt-2 text-sm"
                     placeholder={
-                      v.useAI
-                        ? t('ai_instructions_placeholder')
-                        : t('template_placeholder')
+                      v.useAI ? t('ai_instructions_placeholder') : t('template_placeholder')
                     }
                   />
                 </div>

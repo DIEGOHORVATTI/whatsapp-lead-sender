@@ -1,8 +1,8 @@
 import { Component } from 'react'
 import type { Campaign, CampaignResult } from '../../types/Campaign'
 import { exportCampaignResults, downloadCSV } from '../../utils/csvExporter'
-import CountdownBar from '../molecules/CountdownBar'
 import { t } from '../../utils/i18n'
+import CountdownBar from '../molecules/CountdownBar'
 
 interface CampaignProgressProps {
   campaign: Campaign
@@ -95,7 +95,8 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
               onClick={onBack}
               className="text-xs text-primary hover:underline shrink-0"
             >
-              {'← '}{t('back')}
+              {'← '}
+              {t('back')}
             </button>
           )}
           <h2 className="text-sm font-medium truncate flex-1">{campaign.name}</h2>
@@ -222,7 +223,8 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
                     )}
                   </span>
                   <span className="text-muted-foreground">
-                    {v.rate.toFixed(0)}% · {v.sent} {t('sent_abbr')} · {v.failed} {t('failure_abbr')}
+                    {v.rate.toFixed(0)}% · {v.sent} {t('sent_abbr')} · {v.failed}{' '}
+                    {t('failure_abbr')}
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-accent rounded overflow-hidden">
@@ -269,7 +271,11 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
                               : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400'
                         }`}
                       >
-                        {r.status === 'sent' ? t('ok') : r.status === 'failed' ? t('failed') : t('skipped')}
+                        {r.status === 'sent'
+                          ? t('ok')
+                          : r.status === 'failed'
+                            ? t('failed')
+                            : t('skipped')}
                       </span>
                     </td>
                   </tr>

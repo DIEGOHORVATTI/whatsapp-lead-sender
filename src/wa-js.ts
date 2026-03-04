@@ -171,9 +171,8 @@ if (window.__WTF_INJECTED__) {
     try {
       const value = await withTimeout(result.sendMsgResult, 10_000, 'sendMsgResult')
       dbg('sendMsgResult:', value)
-      const valueRecord = typeof value === 'object' && value !== null
-        ? (value as Record<string, unknown>)
-        : undefined
+      const valueRecord =
+        typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : undefined
       const resultStr: string | undefined =
         typeof value === 'string'
           ? value

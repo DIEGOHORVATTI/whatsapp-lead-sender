@@ -5,7 +5,10 @@ interface LanguageSelectorState {
   open: boolean
 }
 
-export default class LanguageSelector extends Component<Record<string, never>, LanguageSelectorState> {
+export default class LanguageSelector extends Component<
+  Record<string, never>,
+  LanguageSelectorState
+> {
   static override contextType = I18nContext
   declare context: React.ContextType<typeof I18nContext>
 
@@ -20,7 +23,9 @@ export default class LanguageSelector extends Component<Record<string, never>, L
       <div className="relative">
         <button
           type="button"
-          onClick={() => this.setState({ open: !this.state.open })}
+          onClick={() => {
+            this.setState({ open: !this.state.open })
+          }}
           className="px-2 py-1 text-[10px] rounded border border-input bg-muted text-muted-foreground hover:text-foreground transition-colors"
           title={current?.label}
         >
@@ -30,7 +35,9 @@ export default class LanguageSelector extends Component<Record<string, never>, L
           <>
             <div
               className="fixed inset-0 z-40"
-              onClick={() => this.setState({ open: false })}
+              onClick={() => {
+                this.setState({ open: false })
+              }}
             />
             <div className="absolute right-0 top-full mt-1 z-50 border border-border bg-card rounded-lg shadow-lg py-1 min-w-[120px]">
               {locales.map((l) => (

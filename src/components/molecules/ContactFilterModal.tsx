@@ -1,6 +1,7 @@
 import { Component } from 'react'
 import type { Lead, LeadMeta } from '../../types/Lead'
 import { LEAD_FIELDS } from '../../types/Lead'
+import { t } from '../../utils/i18n'
 import Button from '../atoms/Button'
 import { ControlSelect } from '../atoms/ControlFactory'
 
@@ -70,7 +71,7 @@ export default class ContactFilterModal extends Component<
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div className="bg-card border border-border rounded-lg shadow-xl w-[90%] max-w-lg max-h-[80vh] flex flex-col">
           <div className="flex items-center justify-between p-3 border-b border-border">
-            <h3 className="text-sm font-semibold">Filtrar Contatos</h3>
+            <h3 className="text-sm font-semibold">{t('filter_contacts')}</h3>
             <button
               type="button"
               onClick={onClose}
@@ -84,7 +85,7 @@ export default class ContactFilterModal extends Component<
             {/* Search */}
             <input
               type="text"
-              placeholder="Buscar nome, decisor, telefone..."
+              placeholder={t('search_name_decision_phone')}
               value={search}
               onChange={(e) => {
                 this.setState({ search: e.target.value })
@@ -139,7 +140,7 @@ export default class ContactFilterModal extends Component<
                       }}
                       className="text-xs"
                     >
-                      <option value="">Todos</option>
+                      <option value="">{t('all')}</option>
                       {values.map((v) => (
                         <option key={v} value={v}>
                           {v}
@@ -154,7 +155,7 @@ export default class ContactFilterModal extends Component<
 
           <div className="flex items-center justify-between p-3 border-t border-border">
             <span className="text-xs text-muted-foreground">
-              {filtered.length} contatos encontrados
+              {t('contacts_found', { count: filtered.length })}
             </span>
             <div className="flex gap-2">
               <Button
@@ -164,7 +165,7 @@ export default class ContactFilterModal extends Component<
                 }}
                 className="text-xs"
               >
-                Limpar
+                {t('clear')}
               </Button>
               <Button
                 variant="primary"
@@ -173,7 +174,7 @@ export default class ContactFilterModal extends Component<
                 }}
                 className="text-xs"
               >
-                Aplicar ({filtered.length})
+                {t('apply_count', { count: filtered.length })}
               </Button>
             </div>
           </div>

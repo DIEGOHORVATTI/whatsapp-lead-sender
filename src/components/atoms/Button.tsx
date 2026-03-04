@@ -79,7 +79,12 @@ export default class Button extends Component<ButtonProps, unknown> {
         classNames.push('bg-muted', 'text-foreground', 'hover:bg-accent', 'focus:ring-ring/40')
         break
       case 'dark':
-        classNames.push('bg-foreground', 'text-background', 'hover:opacity-90', 'focus:ring-ring/40')
+        classNames.push(
+          'bg-foreground',
+          'text-background',
+          'hover:opacity-90',
+          'focus:ring-ring/40'
+        )
         break
     }
 

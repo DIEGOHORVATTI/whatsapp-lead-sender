@@ -1,5 +1,4 @@
 import { Component, createRef, type RefObject } from 'react'
-import { t } from '../../utils/i18n'
 import type { AIConfig } from '../../types/AIConfig'
 import { DEFAULT_AI_CONFIG } from '../../types/AIConfig'
 import type { Attachment } from '../../types/Attachment'
@@ -15,6 +14,7 @@ import type { Lead } from '../../types/Lead'
 import campaignManager from '../../utils/CampaignManager'
 import campaignStorage from '../../utils/CampaignStorage'
 import { generateMessage } from '../../utils/aiService'
+import { t } from '../../utils/i18n'
 import { replaceVariables } from '../../utils/templateEngine'
 import Button from '../atoms/Button'
 import { ControlInput } from '../atoms/ControlFactory'
@@ -179,7 +179,15 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
     const now = new Date()
     const hour = now.getHours()
     const day = now.getDay()
-    const dayNames = [t('day_sun'), t('day_mon'), t('day_tue'), t('day_wed'), t('day_thu'), t('day_fri'), t('day_sat')]
+    const dayNames = [
+      t('day_sun'),
+      t('day_mon'),
+      t('day_tue'),
+      t('day_wed'),
+      t('day_thu'),
+      t('day_fri'),
+      t('day_sat'),
+    ]
     const allowedDays = schedule.daysOfWeek.map((d) => dayNames[d]).join(', ')
 
     if (!schedule.daysOfWeek.includes(day)) {
@@ -192,7 +200,11 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
     if (hour < schedule.startHour || hour >= schedule.endHour) {
       this.setState({
         outsideSchedule: true,
-        scheduleReason: t('outside_schedule', { start: String(schedule.startHour), end: String(schedule.endHour), current: String(hour) }),
+        scheduleReason: t('outside_schedule', {
+          start: String(schedule.startHour),
+          end: String(schedule.endHour),
+          current: String(hour),
+        }),
       })
       return
     }
@@ -390,6 +402,25 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
     const previewMessages =
       activeVariant?.useAI && aiPreviewMessage ? [aiPreviewMessage] : this.getPreviewMessages()
 
+    // Contact picker full-screen mode
+    if (this.state.showContactPicker) {
+      return (
+        <ContactPickerModal
+          onSelect={(selectedLeads) => {
+            this.setState({
+              leads: selectedLeads,
+              previewLeadIndex: 0,
+              aiPreviewMessage: '',
+              showContactPicker: false,
+            })
+          }}
+          onClose={() => {
+            this.setState({ showContactPicker: false })
+          }}
+        />
+      )
+    }
+
     // Full preview mode
     if (showFullPreview) {
       const searchLower = fullPreviewSearch.toLowerCase()
@@ -403,7 +434,9 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
       return (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium">{t('preview')} — {fullPreviewResults.length} msgs</h2>
+            <h2 className="text-sm font-medium">
+              {t('preview')} — {fullPreviewResults.length} msgs
+            </h2>
             <button
               type="button"
               onClick={() => {
@@ -518,21 +551,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
           />
         </div>
 
-        {this.state.showContactPicker && (
-          <ContactPickerModal
-            onSelect={(selectedLeads) => {
-              this.setState({
-                leads: selectedLeads,
-                previewLeadIndex: 0,
-                aiPreviewMessage: '',
-                showContactPicker: false,
-              })
-            }}
-            onClose={() => {
-              this.setState({ showContactPicker: false })
-            }}
-          />
-        )}
+        {/* Contact picker renders as full-screen replacement in parent */}
 
         {/* Config Panel */}
         <ConfigPanel
@@ -615,7 +634,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                       : 'bg-muted text-muted-foreground hover:bg-accent'
                   }`}
                 >
-                  IA
+                  {t('ai')}
                 </button>
                 {variants.length > 1 && (
                   <button
@@ -624,7 +643,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                       this.removeVariant(activeVariantIndex)
                     }}
                     className="w-7 h-7 flex items-center justify-center rounded-full text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                    title="Remover variante"
+                    title={t('remove_variant')}
                   >
                     ×
                   </button>
@@ -634,7 +653,10 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
 
             <VariableToolbar onInsert={this.insertVariable} />
 
-            {(activeVariant.templates.length > 0 ? activeVariant.templates : [activeVariant.template]).map((tpl, tplIdx, arr) => (
+            {(activeVariant.templates.length > 0
+              ? activeVariant.templates
+              : [activeVariant.template]
+            ).map((tpl, tplIdx, arr) => (
               <div key={tplIdx} className="relative mt-2">
                 <div className="flex items-center gap-1 mb-1">
                   <span className="text-[10px] text-muted-foreground font-medium">
@@ -661,7 +683,11 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                   ref={this.getTextareaRef(`${activeVariant.id}-${String(tplIdx)}`)}
                   value={tpl}
                   onChange={(e) => {
-                    const templates = [...(activeVariant.templates.length > 0 ? activeVariant.templates : [activeVariant.template])]
+                    const templates = [
+                      ...(activeVariant.templates.length > 0
+                        ? activeVariant.templates
+                        : [activeVariant.template]),
+                    ]
                     templates[tplIdx] = e.target.value
                     this.updateVariant(activeVariantIndex, {
                       templates,
@@ -681,7 +707,12 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
             <button
               type="button"
               onClick={() => {
-                const templates = [...(activeVariant.templates.length > 0 ? activeVariant.templates : [activeVariant.template]), '']
+                const templates = [
+                  ...(activeVariant.templates.length > 0
+                    ? activeVariant.templates
+                    : [activeVariant.template]),
+                  '',
+                ]
                 this.updateVariant(activeVariantIndex, { templates })
               }}
               className="mt-2 px-3 py-1.5 text-[11px] font-medium text-primary bg-primary/8 hover:bg-primary/16 rounded-lg transition-colors"
@@ -706,7 +737,11 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                   variant="info"
                   onClick={() => void this.generateAIPreview()}
                   disabled={aiPreviewLoading || leads.length === 0 || aiConfig.provider === 'none'}
-                  style={aiPreviewLoading || leads.length === 0 || aiConfig.provider === 'none' ? { pointerEvents: 'none' } : undefined}
+                  style={
+                    aiPreviewLoading || leads.length === 0 || aiConfig.provider === 'none'
+                      ? { pointerEvents: 'none' }
+                      : undefined
+                  }
                   className="mt-2 text-xs"
                 >
                   {aiPreviewLoading ? t('generating') : t('generate_with_ai')}
@@ -731,7 +766,11 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
             }}
           >
             {previewMessages.map((msg, i) => (
-              <PreviewBubble key={i} message={msg} attachmentName={i === 0 ? attachment?.name : undefined} />
+              <PreviewBubble
+                key={i}
+                message={msg}
+                attachmentName={i === 0 ? attachment?.name : undefined}
+              />
             ))}
           </div>
 
@@ -840,7 +879,9 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
             variant="secondary"
             onClick={() => void this.handleFullPreview()}
             disabled={
-              leads.length === 0 || variants.every((v) => v.templates.every((t) => !t.trim())) || fullPreviewLoading
+              leads.length === 0 ||
+              variants.every((v) => v.templates.every((t) => !t.trim())) ||
+              fullPreviewLoading
             }
             className="text-xs"
           >
@@ -849,7 +890,8 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
         </div>
         <div className="text-center">
           <span className="text-[10px] text-muted-foreground">
-            {leads.length} {t('contacts')} · {variants.length} {variants.length > 1 ? t('variants_count_plural') : t('variants_count')}
+            {leads.length} {t('contacts')} · {variants.length}{' '}
+            {variants.length > 1 ? t('variants_count_plural') : t('variants_count')}
           </span>
         </div>
       </div>

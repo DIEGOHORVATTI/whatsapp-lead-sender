@@ -1,8 +1,8 @@
 import { Component } from 'react'
 import type { Campaign } from '../../types/Campaign'
 import campaignStorage from '../../utils/CampaignStorage'
-import Button from '../atoms/Button'
 import { t } from '../../utils/i18n'
+import Button from '../atoms/Button'
 
 interface CampaignListProps {
   onNewCampaign: () => void
@@ -134,7 +134,9 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
                     </span>
                     <button
                       type="button"
-                      onClick={(e) => this.handleEdit(e, c)}
+                      onClick={(e) => {
+                        this.handleEdit(e, c)
+                      }}
                       className="w-7 h-7 flex items-center justify-center rounded-full text-sm text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                       title={t('edit_campaign')}
                     >
@@ -159,12 +161,18 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                  <span>{total} {t('contacts')}</span>
+                  <span>
+                    {total} {t('contacts')}
+                  </span>
                   {sent > 0 && (
-                    <span className="text-green-600 dark:text-green-400">{sent} {t('sent_label')}</span>
+                    <span className="text-green-600 dark:text-green-400">
+                      {sent} {t('sent_label')}
+                    </span>
                   )}
                   {failed > 0 && (
-                    <span className="text-red-600 dark:text-red-400">{failed} {t('failures_label')}</span>
+                    <span className="text-red-600 dark:text-red-400">
+                      {failed} {t('failures_label')}
+                    </span>
                   )}
                   <span className="ml-auto">
                     {new Date(c.createdAt).toLocaleDateString('pt-BR')}

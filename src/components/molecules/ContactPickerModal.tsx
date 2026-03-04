@@ -4,7 +4,7 @@ import { LEAD_FIELDS } from '../../types/Lead'
 import campaignStorage from '../../utils/CampaignStorage'
 import { t } from '../../utils/i18n'
 import Button from '../atoms/Button'
-import { ControlSelect } from '../atoms/ControlFactory'
+import SelectMultiAutoComplete from '../atoms/SelectMultiAutoComplete'
 
 interface ContactPickerModalProps {
   onSelect: (leads: Lead[]) => void
@@ -15,12 +15,44 @@ interface ContactPickerModalState {
   leads: Lead[]
   meta: Map<string, LeadMeta>
   loading: boolean
-  filters: Record<string, string>
+  filters: Record<string, string[]>
   search: string
   selectedIds: Set<string>
+  linhaFrom: string
+  linhaTo: string
 }
 
-const FILTERABLE_FIELDS = ['segmento', 'cidade', 'uf', 'porte', 'bairro', 'cnae'] as const
+const FILTERABLE_FIELDS = [
+  'segmento',
+  'cidade',
+  'uf',
+  'porte',
+  'bairro',
+  'cnae',
+  'cargo',
+  'dias_abertura',
+] as const
+
+function formatPhoneDisplay(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length === 13) {
+    // +55 11 99999-9999
+    return `+${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9)}`
+  }
+  if (digits.length === 12) {
+    // +55 11 9999-9999
+    return `+${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4, 8)}-${digits.slice(8)}`
+  }
+  if (digits.length === 11) {
+    // (11) 99999-9999
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+  }
+  if (digits.length === 10) {
+    // (11) 9999-9999
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
+  }
+  return phone
+}
 
 export default class ContactPickerModal extends Component<
   ContactPickerModalProps,
@@ -35,6 +67,8 @@ export default class ContactPickerModal extends Component<
       filters: {},
       search: '',
       selectedIds: new Set(),
+      linhaFrom: '',
+      linhaTo: '',
     }
   }
 
@@ -63,9 +97,18 @@ export default class ContactPickerModal extends Component<
   }
 
   private getFilteredLeads(): Lead[] {
-    const { leads, search, filters } = this.state
+    const { leads, search, filters, linhaFrom, linhaTo } = this.state
     const s = search.toLowerCase()
-    return leads.filter((lead) => {
+
+    // Apply linha (row range) filter first
+    let filtered = leads
+    const from = linhaFrom ? parseInt(linhaFrom, 10) : 0
+    const to = linhaTo ? parseInt(linhaTo, 10) : leads.length - 1
+    if (linhaFrom || linhaTo) {
+      filtered = filtered.filter((_, idx) => idx >= from && idx <= to)
+    }
+
+    return filtered.filter((lead) => {
       if (s) {
         const match =
           lead.nome_fantasia.toLowerCase().includes(s) ||
@@ -75,7 +118,11 @@ export default class ContactPickerModal extends Component<
       }
       const filterKeys = Object.keys(filters)
       for (const field of filterKeys) {
-        if (filters[field] && lead[field] !== filters[field]) return false
+        const vals = filters[field]
+        if (vals && vals.length > 0) {
+          const leadVal = lead[field]?.trim() ?? ''
+          if (!vals.includes(leadVal)) return false
+        }
       }
       return true
     })
@@ -109,122 +156,180 @@ export default class ContactPickerModal extends Component<
     this.props.onSelect(selected)
   }
 
+  private clearFilters = () => {
+    this.setState({ filters: {}, linhaFrom: '', linhaTo: '' })
+  }
+
   override render() {
     const { onClose } = this.props
-    const { loading, filters, search, selectedIds } = this.state
+    const { loading, filters, search, selectedIds, linhaFrom, linhaTo } = this.state
     const filtered = this.getFilteredLeads()
-    const activeFilters = Object.keys(filters).filter((k) => filters[k])
+    const hasActiveFilters =
+      Object.keys(filters).some((k) => filters[k] && filters[k].length > 0) || linhaFrom || linhaTo
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="bg-card border border-border rounded-lg shadow-xl w-[95%] max-w-2xl max-h-[85vh] flex flex-col">
-          <div className="flex items-center justify-between p-3 border-b border-border">
-            <h3 className="text-sm font-semibold">{t('select_saved_contacts')}</h3>
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-7 h-7 flex items-center justify-center rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              ×
-            </button>
+      <div className="flex flex-col h-full">
+        {/* Header with back button */}
+        <div className="flex items-center gap-2 p-3 border-b border-border bg-card">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-2 py-1 text-xs font-medium text-primary bg-primary/8 hover:bg-primary/16 rounded-lg transition-colors"
+          >
+            {t('back_to_list')}
+          </button>
+          <h3 className="text-sm font-semibold flex-1">{t('select_saved_contacts')}</h3>
+          <span className="text-[10px] text-muted-foreground">
+            {selectedIds.size} {t('of')} {this.state.leads.length} {t('selected')}
+          </span>
+        </div>
+
+        {loading ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">{t('loading')}</div>
+        ) : this.state.leads.length === 0 ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">
+            {t('no_contacts_import_csv')}
           </div>
-
-          {loading ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">{t('loading')}</div>
-          ) : this.state.leads.length === 0 ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">
-              {t('no_contacts_import_csv')}
-            </div>
-          ) : (
-            <>
-              <div className="p-3 flex flex-col gap-2">
-                {/* Search + toggle */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder={t('search')}
-                    value={search}
-                    onChange={(e) => {
-                      this.setState({ search: e.target.value })
-                    }}
-                    className="flex-1 px-2 py-1.5 text-xs border border-input rounded-lg bg-muted text-foreground placeholder:text-muted-foreground"
-                  />
-                  <Button variant="light" onClick={this.toggleAll} className="text-xs">
-                    {filtered.every((l) => selectedIds.has(l.id)) ? t('deselect_all') : t('select_all')}
-                  </Button>
-                </div>
-
-                {/* Filters */}
-                <div className="flex flex-wrap gap-2">
-                  {FILTERABLE_FIELDS.map((field) => {
-                    const values = this.getUniqueValues(field)
-                    if (values.length === 0) return null
-                    const label = LEAD_FIELDS.find((f) => f.key === field)?.label ?? field
-                    return (
-                      <ControlSelect
-                        key={field}
-                        value={filters[field] ?? ''}
-                        onChange={(e) => {
-                          this.setState({ filters: { ...filters, [field]: e.target.value } })
-                        }}
-                        className="text-xs"
-                      >
-                        <option value="">{`${label}: ${t('all')}`}</option>
-                        {values.map((v) => (
-                          <option key={v} value={v}>
-                            {v}
-                          </option>
-                        ))}
-                      </ControlSelect>
-                    )
-                  })}
-                </div>
-
-                {/* Active filter chips */}
-                {activeFilters.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {activeFilters.map((field) => {
-                      const label = LEAD_FIELDS.find((f) => f.key === field)?.label ?? field
-                      return (
-                        <span
-                          key={field}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] bg-primary/80 text-white rounded-full"
-                        >
-                          {label}: {filters[field]}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const next = { ...filters }
-                              // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-                              delete next[field]
-                              this.setState({ filters: next })
-                            }}
-                            className="w-4 h-4 flex items-center justify-center rounded-full text-[10px] hover:bg-white/20 transition-colors"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      )
-                    })}
-                  </div>
-                )}
+        ) : (
+          <>
+            <div className="p-3 flex flex-col gap-2">
+              {/* Search + toggle */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder={t('search')}
+                  value={search}
+                  onChange={(e) => {
+                    this.setState({ search: e.target.value })
+                  }}
+                  className="flex-1 px-2 py-1.5 text-xs border border-input rounded-lg bg-muted text-foreground placeholder:text-muted-foreground"
+                />
+                <Button variant="light" onClick={this.toggleAll} className="text-xs">
+                  {filtered.every((l) => selectedIds.has(l.id))
+                    ? t('deselect_all')
+                    : t('select_all')}
+                </Button>
               </div>
 
-              {/* Table */}
-              <div className="overflow-auto flex-1 border-t border-border">
-                <table className="w-full text-xs">
-                  <thead className="bg-muted sticky top-0">
-                    <tr>
-                      <th className="p-1.5 w-8"></th>
-                      <th className="p-1.5 text-left">{t('name')}</th>
-                      <th className="p-1.5 text-left">{t('decision_maker')}</th>
-                      <th className="p-1.5 text-left">{t('segment')}</th>
-                      <th className="p-1.5 text-left">{t('city')}</th>
-                      <th className="p-1.5 text-left">{t('phone_abbr')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.slice(0, 300).map((lead) => (
+              {/* Filters - 2 per row grid */}
+              <div className="grid grid-cols-2 gap-1.5">
+                {FILTERABLE_FIELDS.map((field) => {
+                  const values = this.getUniqueValues(field)
+                  if (values.length === 0) return null
+                  const label = LEAD_FIELDS.find((f) => f.key === field)?.label ?? field
+                  return (
+                    <SelectMultiAutoComplete
+                      key={field}
+                      label={label}
+                      options={values}
+                      selected={filters[field] ?? []}
+                      onChange={(selected) => {
+                        this.setState({ filters: { ...filters, [field]: selected } })
+                      }}
+                      className="text-xs"
+                    />
+                  )
+                })}
+
+                {/* Linha (row range) filter */}
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={0}
+                    max={this.state.leads.length - 1}
+                    placeholder="Linha de"
+                    value={linhaFrom}
+                    onChange={(e) => {
+                      this.setState({ linhaFrom: e.target.value })
+                    }}
+                    className="w-full bg-muted text-foreground border border-input p-1 rounded-lg text-xs placeholder:text-muted-foreground"
+                  />
+                  <span className="text-[10px] text-muted-foreground shrink-0">{t('to')}</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={this.state.leads.length - 1}
+                    placeholder="Linha até"
+                    value={linhaTo}
+                    onChange={(e) => {
+                      this.setState({ linhaTo: e.target.value })
+                    }}
+                    className="w-full bg-muted text-foreground border border-input p-1 rounded-lg text-xs placeholder:text-muted-foreground"
+                  />
+                </div>
+              </div>
+
+              {/* Active filter chips */}
+              {hasActiveFilters && (
+                <div className="flex flex-wrap gap-1 items-center">
+                  {Object.keys(filters).map((field) => {
+                    const vals = filters[field]
+                    if (!vals || vals.length === 0) return null
+                    const label = LEAD_FIELDS.find((f) => f.key === field)?.label ?? field
+                    return vals.map((v) => (
+                      <span
+                        key={`${field}-${v}`}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] bg-primary/80 text-white rounded-full"
+                      >
+                        {label}: {v}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = { ...filters, [field]: vals.filter((x) => x !== v) }
+                            if (next[field]!.length === 0) {
+                              // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+                              delete next[field]
+                            }
+                            this.setState({ filters: next })
+                          }}
+                          className="w-4 h-4 flex items-center justify-center rounded-full text-[10px] hover:bg-white/20 transition-colors"
+                        >
+                          x
+                        </button>
+                      </span>
+                    ))
+                  })}
+                  {(linhaFrom || linhaTo) && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] bg-primary/80 text-white rounded-full">
+                      Linha: {linhaFrom || '0'} - {linhaTo || String(this.state.leads.length - 1)}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          this.setState({ linhaFrom: '', linhaTo: '' })
+                        }}
+                        className="w-4 h-4 flex items-center justify-center rounded-full text-[10px] hover:bg-white/20 transition-colors"
+                      >
+                        x
+                      </button>
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={this.clearFilters}
+                    className="text-[10px] text-muted-foreground hover:text-foreground underline ml-1"
+                  >
+                    {t('clear_all')}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Table */}
+            <div className="overflow-auto flex-1 border-t border-border">
+              <table className="w-full text-xs">
+                <thead className="bg-muted sticky top-0">
+                  <tr>
+                    <th className="p-1.5 w-6 text-center text-[10px] text-muted-foreground">#</th>
+                    <th className="p-1.5 w-8"></th>
+                    <th className="p-1.5 text-left">{t('name')}</th>
+                    <th className="p-1.5 text-left">{t('decision_maker')}</th>
+                    <th className="p-1.5 text-left">{t('phone_abbr')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.slice(0, 500).map((lead) => {
+                    const originalIndex = this.state.leads.indexOf(lead)
+                    return (
                       <tr
                         key={lead.id}
                         className={`border-t border-border hover:bg-muted/50 cursor-pointer ${
@@ -234,42 +339,43 @@ export default class ContactPickerModal extends Component<
                           this.toggleOne(lead.id)
                         }}
                       >
+                        <td className="p-1.5 text-center text-[10px] text-muted-foreground font-mono">
+                          {originalIndex}
+                        </td>
                         <td className="p-1.5 text-center">
                           <input type="checkbox" checked={selectedIds.has(lead.id)} readOnly />
                         </td>
                         <td className="p-1.5 truncate max-w-24">{lead.nome_fantasia}</td>
                         <td className="p-1.5 truncate max-w-20">{lead.decisor}</td>
-                        <td className="p-1.5 truncate max-w-20">{lead.segmento}</td>
-                        <td className="p-1.5 truncate max-w-16">
-                          {lead.cidade}
-                          {lead.uf ? `/${lead.uf}` : ''}
+                        <td className="p-1.5 font-mono text-[11px]">
+                          {formatPhoneDisplay(lead.telefone)}
                         </td>
-                        <td className="p-1.5 font-mono">{lead.telefone}</td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-
-          <div className="flex items-center justify-between p-3 border-t border-border">
-            <span className="text-xs text-muted-foreground">
-              {selectedIds.size} {t('of')} {this.state.leads.length} {t('selected')}
-            </span>
-            <div className="flex gap-2">
-              <Button variant="light" onClick={onClose} className="text-xs">
-                {t('cancel')}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={this.handleApply}
-                disabled={selectedIds.size === 0}
-                className="text-xs"
-              >
-                {`${t('select')} ${selectedIds.size} ${t('contacts')}`}
-              </Button>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
+          </>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-between p-3 border-t border-border bg-card">
+          <span className="text-xs text-muted-foreground">
+            {filtered.length} {t('contacts')} | {selectedIds.size} {t('selected')}
+          </span>
+          <div className="flex gap-2">
+            <Button variant="light" onClick={onClose} className="text-xs">
+              {t('cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={this.handleApply}
+              disabled={selectedIds.size === 0}
+              className="text-xs"
+            >
+              {`${t('select')} ${selectedIds.size} ${t('contacts')}`}
+            </Button>
           </div>
         </div>
       </div>

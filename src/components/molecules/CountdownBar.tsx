@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import { t } from '../../utils/i18n'
 
 interface CountdownBarProps {
   totalMs: number
@@ -39,7 +40,7 @@ export default class CountdownBar extends Component<CountdownBarProps, Countdown
     return (
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-          <span>Próximo envio em {seconds}s</span>
+          <span>{t('next_send_in', { seconds })}</span>
           <span>{Math.round(progress * 100)}%</span>
         </div>
         <div className="h-2 bg-primary/20 rounded-full overflow-hidden">

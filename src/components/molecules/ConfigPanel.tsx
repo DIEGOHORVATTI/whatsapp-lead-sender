@@ -3,10 +3,10 @@ import type { AIConfig } from '../../types/AIConfig'
 import { AI_MODELS } from '../../types/AIConfig'
 import type { Attachment } from '../../types/Attachment'
 import type { BatchConfig, TimingConfig } from '../../types/Campaign'
+import { t } from '../../utils/i18n'
 import Button from '../atoms/Button'
 import { ControlInput, ControlSelect, ControlTextArea } from '../atoms/ControlFactory'
 import TimingControls from './TimingControls'
-import { t } from '../../utils/i18n'
 
 interface ConfigPanelProps {
   timing: TimingConfig

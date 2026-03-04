@@ -206,5 +206,13 @@
   "variants_count_plural": "variantes",
   "today_not_allowed": "Hoje ({{day}}) não é um dia permitido. Dias permitidos: {{allowedDays}}.",
   "outside_schedule": "Fora do horário permitido ({{start}}h às {{end}}h). Horário atual: {{current}}h.",
-  "language": "Idioma"
+  "language": "Idioma",
+  "next_send_in": "Próximo envio em {{seconds}}s",
+  "insert_variable": "Inserir variável",
+  "filter_contacts": "Filtrar Contatos",
+  "search_name_decision_phone": "Buscar nome, decisor, telefone...",
+  "contacts_found": "{{count}} contatos encontrados",
+  "apply_count": "Aplicar ({{count}})",
+  "remove_variant": "Remover variante",
+  "info_about": "Info sobre {{id}}"
 }

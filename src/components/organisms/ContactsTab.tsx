@@ -239,9 +239,7 @@ export default class ContactsTab extends Component<Record<string, never>, Contac
         {/* Table */}
         {filtered.length === 0 ? (
           <div className="text-center py-8 text-sm text-muted-foreground">
-            {this.state.leads.length === 0
-              ? t('no_contacts_saved')
-              : t('no_contacts_filtered')}
+            {this.state.leads.length === 0 ? t('no_contacts_saved') : t('no_contacts_filtered')}
           </div>
         ) : (
           <div className="overflow-auto max-h-[50vh] border border-border rounded-lg">

@@ -201,8 +201,7 @@ class CampaignManager {
           }
         }
 
-        const isLastLead =
-          lead === pendingLeads[pendingLeads.length - 1]
+        const isLastLead = lead === pendingLeads[pendingLeads.length - 1]
         await this.processLead(campaign, lead, isLastLead)
       }
 
@@ -249,7 +248,14 @@ class CampaignManager {
     try {
       const messages = await this.generateMessagesForLead(lead, variant)
       result.generatedMessage = messages.join('\n---\n')
-      console.log('[WTF Campaign] Processing lead:', result.contact, '| variant:', variant.name, '| msgs:', messages.length)
+      console.log(
+        '[WTF Campaign] Processing lead:',
+        result.contact,
+        '| variant:',
+        variant.name,
+        '| msgs:',
+        messages.length
+      )
 
       if (!this.sendFn) throw new Error('Send function not configured')
 

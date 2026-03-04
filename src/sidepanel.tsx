@@ -1,6 +1,7 @@
 import { Component } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import LanguageSelector from 'components/molecules/LanguageSelector'
 import ScrollableTabBar from 'components/molecules/ScrollableTabBar'
 import CampaignList from 'components/organisms/CampaignList'
 import CampaignProgress from 'components/organisms/CampaignProgress'
@@ -15,7 +16,6 @@ import AsyncChromeMessageManager from 'utils/AsyncChromeMessageManager'
 import campaignManager from 'utils/CampaignManager'
 import campaignStorage from 'utils/CampaignStorage'
 import { t, I18nProvider } from 'utils/i18n'
-import LanguageSelector from 'components/molecules/LanguageSelector'
 
 const messageManager = new AsyncChromeMessageManager('sidepanel')
 
@@ -87,20 +87,28 @@ class ProgressOverview extends Component<ProgressOverviewProps, ProgressOverview
           const total = c.leadIds.length
           const progress = total > 0 ? ((sent + failed) / total) * 100 : 0
           const statusLabel =
-            c.status === 'completed' ? t('status_completed')
-            : c.status === 'paused' ? t('status_paused')
-            : c.status === 'running' ? t('status_running')
-            : t('status_draft')
+            c.status === 'completed'
+              ? t('status_completed')
+              : c.status === 'paused'
+                ? t('status_paused')
+                : c.status === 'running'
+                  ? t('status_running')
+                  : t('status_draft')
           const statusClass =
-            c.status === 'completed' ? 'bg-primary/15 text-primary'
-            : c.status === 'paused' ? 'bg-warning/15 text-warning'
-            : c.status === 'running' ? 'bg-success/15 text-success'
-            : 'bg-muted text-muted-foreground'
+            c.status === 'completed'
+              ? 'bg-primary/15 text-primary'
+              : c.status === 'paused'
+                ? 'bg-warning/15 text-warning'
+                : c.status === 'running'
+                  ? 'bg-success/15 text-success'
+                  : 'bg-muted text-muted-foreground'
 
           return (
             <div
               key={c.id}
-              onClick={() => this.props.onSelectCampaign(c)}
+              onClick={() => {
+                this.props.onSelectCampaign(c)
+              }}
               className="border border-border rounded-lg p-3 bg-card hover:bg-muted/50 cursor-pointer transition-colors"
             >
               <div className="flex items-center justify-between mb-2">
@@ -117,9 +125,17 @@ class ProgressOverview extends Component<ProgressOverviewProps, ProgressOverview
               </div>
               <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                 <span>{Math.round(progress)}%</span>
-                <span className="text-success">{sent} {t('sent_abbr')}</span>
-                {failed > 0 && <span className="text-destructive">{failed} {t('failure_abbr')}</span>}
-                <span className="ml-auto">{total} {t('contacts')}</span>
+                <span className="text-success">
+                  {sent} {t('sent_abbr')}
+                </span>
+                {failed > 0 && (
+                  <span className="text-destructive">
+                    {failed} {t('failure_abbr')}
+                  </span>
+                )}
+                <span className="ml-auto">
+                  {total} {t('contacts')}
+                </span>
               </div>
             </div>
           )
@@ -363,9 +379,7 @@ class SidePanel extends Component<unknown, SidePanelState> {
               <div className="text-4xl opacity-40">📱</div>
               <div>
                 <p className="text-sm font-medium text-foreground">{t('whatsapp_not_found')}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t('whatsapp_open_tab')}
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">{t('whatsapp_open_tab')}</p>
               </div>
               <button
                 type="button"
@@ -410,9 +424,7 @@ class SidePanel extends Component<unknown, SidePanelState> {
               {wppStatus?.ready && !wppStatus.authenticated && (
                 <div className="mx-3 mt-2 flex items-start gap-2 p-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300">
                   <span className="text-sm leading-none shrink-0">&#x26A0;&#xFE0F;</span>
-                  <span className="text-[11px]">
-                    {t('wpp_not_authenticated')}
-                  </span>
+                  <span className="text-[11px]">{t('wpp_not_authenticated')}</span>
                 </div>
               )}
 
@@ -442,7 +454,11 @@ class SidePanel extends Component<unknown, SidePanelState> {
                       })
                     }}
                     onNewCampaign={() => {
-                      this.setState({ activeTab: 'campaigns', editorMode: true, editingCampaign: null })
+                      this.setState({
+                        activeTab: 'campaigns',
+                        editorMode: true,
+                        editingCampaign: null,
+                      })
                     }}
                   />
                 ))}

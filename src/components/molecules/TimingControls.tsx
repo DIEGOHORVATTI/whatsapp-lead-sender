@@ -1,8 +1,8 @@
 import { Component } from 'react'
 import type { TimingConfig, SafetyLevel } from '../../types/Campaign'
 import { SAFETY_PRESETS } from '../../types/Campaign'
-import { ControlInput } from '../atoms/ControlFactory'
 import { t } from '../../utils/i18n'
+import { ControlInput } from '../atoms/ControlFactory'
 
 interface TimingControlsProps {
   config: TimingConfig
@@ -142,9 +142,7 @@ export default class TimingControls extends Component<TimingControlsProps, Timin
             </p>
           )}
           {!currentLevel && (
-            <p className="text-[10px] text-muted-foreground leading-tight">
-              {t('custom_config')}
-            </p>
+            <p className="text-[10px] text-muted-foreground leading-tight">{t('custom_config')}</p>
           )}
         </div>
 
@@ -317,7 +315,7 @@ function Tooltip({
     <span className="relative inline-flex">
       <button
         type="button"
-        aria-label={`Info sobre ${id}`}
+        aria-label={t('info_about', { id })}
         onClick={onToggle}
         className="w-4 h-4 rounded-full bg-muted border border-input text-[10px] leading-none text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors flex items-center justify-center"
       >

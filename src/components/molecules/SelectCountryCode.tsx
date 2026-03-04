@@ -1,7 +1,7 @@
 import { type ChangeEvent, Component, createRef } from 'react'
-import { t } from '../../utils/i18n'
 import ENcountryCodes from '../../countryCodes.en.json'
 import PTcountryCodes from '../../countryCodes.pt.json'
+import { t } from '../../utils/i18n'
 import { ControlInput } from '../atoms/ControlFactory'
 import type { CountryCode } from 'types/CountryCode'
 

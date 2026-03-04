@@ -1,9 +1,9 @@
 import { type ChangeEvent, Component, type DragEvent } from 'react'
+import { t } from '../../utils/i18n'
 import Button from '../atoms/Button'
 import { ControlInput, ControlSelect } from '../atoms/ControlFactory'
 import Box from '../molecules/Box'
 import { type Message } from 'types/Message'
-import { t } from '../../utils/i18n'
 
 interface ButtonState {
   id: number

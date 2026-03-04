@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import { LEAD_FIELDS } from '../../types/Lead'
+import { t } from '../../utils/i18n'
 interface VariableToolbarProps {
   onInsert: (variable: string) => void
 }
@@ -8,7 +9,7 @@ export default class VariableToolbar extends Component<VariableToolbarProps> {
     return (
       <div className="flex flex-wrap items-center gap-1.5 px-3 py-2.5 bg-background rounded-lg border border-border/60 shadow-sm">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 w-full mb-0.5 select-none">
-          Inserir variável
+          {t('insert_variable')}
         </span>
 
         {LEAD_FIELDS.map(({ key, label }) => (

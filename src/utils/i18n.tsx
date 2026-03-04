@@ -22,7 +22,7 @@ const LOCALE_LABELS: Record<string, string> = {
 
 let currentLocale: Locale = 'pt-BR'
 let currentTranslations: Translations = ptBR
-let listeners: Array<() => void> = []
+let listeners: (() => void)[] = []
 
 function notifyListeners() {
   for (const fn of listeners) fn()
@@ -63,7 +63,7 @@ export function getLocale(): Locale {
   return currentLocale
 }
 
-export function getAvailableLocales(): Array<{ code: string; label: string }> {
+export function getAvailableLocales(): { code: string; label: string }[] {
   return ['pt-BR', ...Object.keys(localeModules)].map((code) => ({
     code,
     label: LOCALE_LABELS[code] ?? code,

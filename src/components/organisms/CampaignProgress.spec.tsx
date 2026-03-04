@@ -9,7 +9,15 @@ function makeCampaign(overrides: Partial<Campaign> = {}): Campaign {
     id: 'test-1',
     name: 'Test Campaign',
     leadIds: ['l1', 'l2', 'l3'],
-    variants: [{ id: 'v1', name: 'Default', template: 'Hi {decisor}', templates: ['Hi {decisor}'], useAI: false }],
+    variants: [
+      {
+        id: 'v1',
+        name: 'Default',
+        template: 'Hi {decisor}',
+        templates: ['Hi {decisor}'],
+        useAI: false,
+      },
+    ],
     timing: { ...DEFAULT_TIMING },
     batch: { ...DEFAULT_BATCH },
     results: [],
