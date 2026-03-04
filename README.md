@@ -1,86 +1,66 @@
-# WTF Chrome Extension
+# WA Sender Pro
 
-This open-source Chrome Extension allows you to send messages in bulk via WhatsApp™ Web. Make sure WhatsApp™ Web is open in your browser while using this extension.
+Free & open-source Chrome Extension for WhatsApp Web bulk messaging campaigns. No server needed — runs entirely in your browser.
+
+## Features
+
+### Campaign Management
+- Create, edit, duplicate, and delete campaigns
+- Campaign progress tracking with real-time stats (sent, failed, pending)
+- Pause, resume, and stop campaigns mid-execution
+- Campaign history with full results stored locally (IndexedDB)
+- Export campaign results to CSV
+
+### Smart Messaging
+- Template variables with dynamic replacement (`{nome}`, `{cidade}`, `{decisor}`, `{segmento}`, etc.)
+- Multiple messages per contact (sent sequentially with natural delays)
+- A/B testing — up to 4 message variants per campaign with performance comparison
+- AI-powered message generation (Claude / OpenAI) with custom prompts
+- Dry-run preview before sending
+
+### Contact Management
+- CSV import with flexible column mapping
+- Phone deduplication on import
+- Contact database with search and filters (name, segment, city, decision-maker)
+- Select contacts from saved database or paste numbers directly
+- Automatic phone fallback (tries `telefone_2` if primary fails)
+- Country code prefix auto-detection
+
+### Anti-Ban Protection
+- Randomized delays between messages (simulates human behavior)
+- Configurable safety levels: Safe, Moderate, Aggressive
+- Daily sending limits with auto-pause
+- Business hours scheduling (configurable days and hours)
+- Batch sending with optional manual resume between batches
+
+### Internationalization
+- Multi-language support: Portugues, English, Espanol
+- Auto-detects browser language
+- Persistent language preference
+
+### Technical
+- Chrome Extension Manifest V3
+- Side Panel UI (no popup clutter)
+- Built with React + TypeScript + TailwindCSS
+- Uses [@wppconnect/wa-js](https://github.com/wppconnect-team/wa-js) for WhatsApp Web integration
+- All data stored locally — no external servers, no data collection
+- Lightweight build with Vite
 
 ## Installation
 
-Install the extension directly from the [Chrome Web Store](https://chrome.google.com/webstore/detail/wtf/kcdlihaidnmkenhlnofkjfoachidbnif).
-Alternatively, download the `extension.zip` file from the [latest release](https://github.com/marcosvrs/wtf/releases) and [load the extension in Chrome](#load-the-extension-in-chrome).
-
-## Usage
-
-1. Open WhatsApp™ Web in your Chrome browser.
-2. Click on the WTF extension icon in the toolbar.
-3. Click **Options** to configure the message and attachment you wish to send.
-4. Back in the Popup, paste the list of phone numbers you want to send messages.
-5. Click **Send** to start the messages delivery.
-
-This extension is intended for legitimate and ethical use only. Please use this extension responsibly. The developers and owners are not responsible for any misuse or abuse of the extension.
+Install from the [Chrome Web Store](https://chrome.google.com/webstore/detail/wtf/kcdlihaidnmkenhlnofkjfoachidbnif) or build from source.
 
 ## Building from Source
-
-If you prefer to build the extension from source code, follow these steps:
-
-### Prerequisites
-
-- Ensure you have the latest Node.js and npm installed. Follow the installation instructions on the [Node.js official website](https://nodejs.org/).
-
-### Clone the Repository
 
 ```bash
 git clone https://github.com/marcosvrs/wtf.git
 cd wtf
+bun install
+bun run build
 ```
 
-### Install Dependencies
-
-```bash
-npm install
-```
-
-### Build the Extension
-
-```bash
-npm run build
-```
-
-This compiles and bundles the JavaScript files into the `dist` directory, which is then ready for local development and testing.
-
-### Load the Extension in Chrome
-
-1. Navigate to the Extensions page `chrome://extensions`.
-   - Alternatively, click on the Extensions menu puzzle button and select **Manage Extensions** at the bottom of the menu.
-   - Or, click the Chrome menu, hover over **More Tools**, then select **Extensions**.
-2. Enable Developer Mode by toggling the switch next to **Developer mode**.
-3. Click the **Load unpacked** button and select the `dist` directory.
-
-The WTF Chrome Extension is now loaded in your Chrome browser.
+Then load the `dist` folder as an unpacked extension in `chrome://extensions` (Developer Mode).
 
 ## Disclaimer
 
-This extension is not affiliated with or endorsed by WhatsApp™ or Meta Platforms, Inc. and affiliates. The use of this extension is at your own risk and the developers are not responsible for any damages, legal consequences, or other liabilities that may arise from the use of this extension.
-
-## Acknowledgments
-
-This project uses the following packages:
-
-- [@playwright/test](https://github.com/microsoft/playwright) (Apache License 2.0)
-- [@tsconfig/recommended](https://github.com/tsconfig/bases) (MIT License)
-- [@types](https://github.com/DefinitelyTyped/DefinitelyTyped) (MIT License)
-- [@wppconnect/wa-js](https://github.com/wppconnect-team/wa-js) (Apache License 2.0)
-- [autoprefixer](https://github.com/postcss/autoprefixer) (MIT License)
-- [copy-webpack-plugin](https://github.com/webpack-contrib/copy-webpack-plugin) (MIT License)
-- [css-loader](https://github.com/webpack-contrib/css-loader) (MIT License)
-- [cssnano](https://github.com/cssnano/cssnano) (MIT License)
-- [postcss-loader](https://github.com/webpack-contrib/postcss-loader) (MIT License)
-- [qrcode-terminal](https://github.com/gtanner/qrcode-terminal) (Apache License 2.0)
-- [react-dom](https://github.com/facebook/react) (MIT License)
-- [react](https://github.com/facebook/react) (MIT License)
-- [rimraf](https://github.com/isaacs/rimraf) (ISC License)
-- [speed-measure-webpack-plugin](https://github.com/stephencookdev/speed-measure-webpack-plugin) (MIT License)
-- [style-loader](https://github.com/webpack-contrib/style-loader) (MIT License)
-- [tailwindcss](https://github.com/tailwindlabs/tailwindcss) (MIT License)
-- [ts-loader](https://github.com/TypeStrong/ts-loader) (MIT License)
-- [typescript](https://github.com/microsoft/TypeScript) (Apache License 2.0)
-- [webpack-cli](https://github.com/webpack/webpack-cli) (MIT License)
-- [webpack-merge](https://github.com/survivejs/webpack-merge) (MIT License)
+This extension is not affiliated with WhatsApp or Meta Platforms, Inc. Use at your own risk — the developers are not responsible for any misuse or consequences. Intended for legitimate and ethical use only.
