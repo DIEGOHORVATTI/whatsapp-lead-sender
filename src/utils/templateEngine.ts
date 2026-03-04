@@ -12,43 +12,57 @@ const TITLE_CASE_FIELDS = new Set([
   'endereco',
 ])
 
-// Virtual variables derived from lead data
-const VIRTUAL_FIELDS: Record<string, (lead: Lead) => string> = {
-  primeiro_nome: (lead) => {
-    const decisor = lead['decisor']
-    if (!decisor) return ''
-    return toTitleCase(String(decisor).trim().split(/\s+/)[0] ?? '')
-  },
+/**
+ * Modifiers that can be applied to any variable via pipe syntax: {field|modifier}
+ * - first: extracts the first word (e.g. "João Silva" → "João")
+ * - upper: converts to UPPERCASE
+ * - lower: converts to lowercase
+ */
+const MODIFIERS: Record<string, (value: string) => string> = {
+  first: (v) => v.trim().split(/\s+/)[0] ?? '',
+  upper: (v) => v.toUpperCase(),
+  lower: (v) => v.toLowerCase(),
 }
 
 /**
- * Replace {variable} placeholders in template with lead data.
+ * Replace {variable} and {variable|modifier} placeholders in template with lead data.
  * Missing values become empty string.
  * Text fields are auto-formatted from UPPERCASE to Title Case.
- * Supports virtual variables like {primeiro_nome} (first name from decisor).
  * Collapses extra spaces left by empty variables.
+ *
+ * Examples:
+ *   {decisor}        → "João Silva" (title case)
+ *   {decisor|first}  → "João" (first word only)
+ *   {cidade|upper}   → "SÃO PAULO"
  */
 export function replaceVariables(template: string, lead: Lead): string {
-  const result = template.replace(/\{(\w+)\}/g, (_match: string, key: string) => {
-    // Check virtual fields first
-    const virtualFn = VIRTUAL_FIELDS[key]
-    if (virtualFn) return virtualFn(lead)
+  const result = template.replace(/\{(\w+)(?:\|(\w+))?\}/g, (_match, key: string, mod?: string) => {
+    const rawValue = lead[key]
+    if (rawValue === undefined || rawValue === '') return ''
 
-    const value = lead[key]
-    if (value === undefined || value === '') return ''
-    if (TITLE_CASE_FIELDS.has(key)) return toTitleCase(String(value))
-    return String(value)
+    let value = String(rawValue)
+
+    // Apply title case for known text fields (before modifier)
+    if (TITLE_CASE_FIELDS.has(key)) value = toTitleCase(value)
+
+    // Apply modifier if present
+    if (mod) {
+      const modFn = MODIFIERS[mod]
+      if (modFn) value = modFn(value)
+    }
+
+    return value
   })
   // Collapse multiple spaces (from empty variables) and trim
   return result.replace(/ {2,}/g, ' ').trim()
 }
 
 /**
- * Extract all {variable} names from a template string.
+ * Extract all {variable} names from a template string (ignores modifiers).
  */
 export function extractVariables(template: string): string[] {
   const matches: string[] = []
-  const regex = /\{(\w+)\}/g
+  const regex = /\{(\w+)(?:\|\w+)?\}/g
   let m: RegExpExecArray | null
   while ((m = regex.exec(template)) !== null) {
     if (m[1]) matches.push(m[1])

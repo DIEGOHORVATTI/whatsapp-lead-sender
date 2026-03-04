@@ -202,6 +202,20 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
               <span className="text-muted-foreground">{t('elapsed_time')}</span>
               <span className="float-right font-medium">{elapsedStr}</span>
             </div>
+            {campaign.timing.dailyLimit > 0 && (
+              <div className="col-span-2">
+                <span className="text-muted-foreground">{t('daily_limit')}</span>
+                <span
+                  className={`float-right font-medium ${
+                    campaign.dailySentCount >= campaign.timing.dailyLimit
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-foreground'
+                  }`}
+                >
+                  {campaign.dailySentCount}/{campaign.timing.dailyLimit}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

@@ -564,6 +564,9 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
 
         {/* Contact picker renders as full-screen replacement in parent */}
 
+        {/* Separator */}
+        <hr className="border-border" />
+
         {/* Config Panel */}
         <ConfigPanel
           timing={timing}
@@ -586,8 +589,16 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
           }}
         />
 
+        {/* Separator */}
+        <hr className="border-border" />
+
         {/* Variant Tabs */}
         <div className="flex items-center gap-1 flex-wrap">
+          {variants.length > 1 && (
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 mr-1">
+              A/B
+            </span>
+          )}
           {variants.map((v, i) => (
             <button
               key={v.id}
@@ -605,6 +616,11 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
               }`}
             >
               {v.name}
+              {variants.length > 1 && (
+                <span className="ml-1 text-[9px] text-muted-foreground">
+                  {String.fromCharCode(65 + i)}
+                </span>
+              )}
             </button>
           ))}
           {variants.length < 4 && (
@@ -612,6 +628,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
               type="button"
               onClick={this.addVariant}
               className="w-7 h-7 flex items-center justify-center text-sm font-medium text-primary bg-primary/8 hover:bg-primary/16 rounded-lg transition-colors"
+              title={t('add_variant_ab')}
             >
               +
             </button>

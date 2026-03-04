@@ -1,7 +1,7 @@
 import { Component } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import LanguageSelector from 'components/molecules/LanguageSelector'
+import GlobalSettingsModal, { loadTheme } from 'components/molecules/GlobalSettingsModal'
 import ScrollableTabBar from 'components/molecules/ScrollableTabBar'
 import CampaignList from 'components/organisms/CampaignList'
 import CampaignProgress from 'components/organisms/CampaignProgress'
@@ -13,7 +13,6 @@ import { ChromeMessageTypes } from 'types/ChromeMessageTypes'
 import type { Lead } from 'types/Lead'
 import { normalizePhone } from 'types/Lead'
 import AsyncChromeMessageManager from 'utils/AsyncChromeMessageManager'
-import campaignManager from 'utils/CampaignManager'
 import campaignStorage from 'utils/CampaignStorage'
 import { t, I18nProvider } from 'utils/i18n'
 
@@ -149,27 +148,10 @@ class ProgressOverview extends Component<ProgressOverviewProps, ProgressOverview
   }
 }
 
-// Wire up the send function so CampaignManager can send messages via content script
-campaignManager.setSendFunction(async (contact: string, message: string) => {
-  console.log('[WTF] sendFn called:', contact, message.slice(0, 50) + '...')
-
-  // Race between the message manager and a 60s timeout
-  const result = await Promise.race([
-    messageManager.sendMessage(ChromeMessageTypes.SEND_MESSAGE, {
-      contact,
-      message,
-      buttons: [],
-    }),
-    new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        reject(new Error(t('timeout_error')))
-      }, 60_000)
-    }),
-  ])
-
-  console.log('[WTF] sendFn result:', result)
-  return result
-})
+// Helper to send commands to background service worker
+function sendToBg(msg: Record<string, unknown>): Promise<unknown> {
+  return chrome.runtime.sendMessage(msg)
+}
 
 type Tab = 'progress' | 'campaigns' | 'contacts' | 'logs'
 
@@ -192,6 +174,7 @@ interface SidePanelState {
   delayInfo: { totalMs: number; startedAt: number } | null
   editorMode: boolean
   editingCampaign: Campaign | null
+  settingsOpen: boolean
 }
 
 class SidePanel extends Component<unknown, SidePanelState> {
@@ -211,39 +194,68 @@ class SidePanel extends Component<unknown, SidePanelState> {
       delayInfo: null,
       editorMode: false,
       editingCampaign: null,
+      settingsOpen: false,
     }
   }
 
   override componentDidMount() {
+    loadTheme()
     void this.checkWhatsApp()
     this.checkInterval = window.setInterval(() => {
       void this.checkWhatsApp()
       void this.checkWppStatus()
     }, 3000)
 
-    // Listen for incoming messages (responses from contacts)
-    chrome.runtime.onMessage.addListener((msg: { type?: string; payload?: { from?: string } }) => {
-      if (msg.type === ChromeMessageTypes.INCOMING_MESSAGE && msg.payload?.from) {
-        void this.handleIncomingMessage(msg.payload.from)
+    // Listen for background campaign status updates + incoming messages
+    chrome.runtime.onMessage.addListener(
+      (msg: { type?: string; campaign?: Campaign; delayInfo?: { totalMs: number; startedAt: number } | null; payload?: { from?: string } }) => {
+        if (msg.type === 'BG_CAMPAIGN_STATUS' && msg.campaign) {
+          this.setState({
+            campaign: msg.campaign,
+            results: msg.campaign.results,
+            isRunning: msg.campaign.status === 'running',
+            isPaused: msg.campaign.status === 'paused',
+          })
+        }
+        if (msg.type === 'BG_CAMPAIGN_DELAY') {
+          this.setState({ delayInfo: msg.delayInfo ?? null })
+        }
+        if (msg.type === ChromeMessageTypes.INCOMING_MESSAGE && msg.payload?.from) {
+          void this.handleIncomingMessage(msg.payload.from)
+        }
       }
-    })
+    )
 
-    // On sidebar close, pause any running campaign so it can be resumed later
-    window.addEventListener('beforeunload', () => {
-      if (this.state.isRunning) {
-        campaignManager.stop()
-      }
-    })
-
-    // Auto-detect paused/running campaigns from storage and show progress
-    void this.detectActiveCampaign()
+    // Check if background has an active campaign running
+    void this.syncWithBackground()
   }
 
   override componentWillUnmount() {
     clearInterval(this.checkInterval)
   }
 
-  private async detectActiveCampaign() {
+  private async syncWithBackground() {
+    try {
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      const status = (await sendToBg({ type: 'BG_GET_STATUS' })) as {
+        running: boolean
+        paused: boolean
+        campaign: Campaign | null
+      } | null
+      if (status?.campaign) {
+        this.setState({
+          campaign: status.campaign,
+          results: status.campaign.results,
+          isRunning: status.running,
+          isPaused: status.paused,
+          activeTab: 'progress',
+        })
+        return
+      }
+    } catch {
+      // background not responding
+    }
+    // Fallback: check storage for paused campaigns
     const all = await campaignStorage.listCampaigns()
     const active = all.find((c) => c.status === 'running' || c.status === 'paused')
     if (active) {
@@ -309,47 +321,27 @@ class SidePanel extends Component<unknown, SidePanelState> {
       delayInfo: null,
     })
 
-    campaignManager.onStatusChange((updated: Campaign) => {
-      this.setState({
-        campaign: updated,
-        results: updated.results,
-        isRunning: updated.status === 'running',
-        isPaused: updated.status === 'paused',
-      })
-    })
-
-    campaignManager.onDelayChange((info) => {
-      this.setState({ delayInfo: info })
-    })
-
-    campaignManager
-      .start(campaign, leads)
-      .then(() => {
-        this.setState({ isRunning: false, delayInfo: null })
-      })
-      .catch(() => {
-        this.setState({ isRunning: false, delayInfo: null })
-      })
+    // Delegate execution to background service worker
+    void sendToBg({ type: 'BG_START_CAMPAIGN', campaign, leads })
   }
 
   private handlePause = () => {
-    campaignManager.pause()
+    void sendToBg({ type: 'BG_PAUSE_CAMPAIGN' })
     this.setState({ isPaused: true })
   }
 
   private handleResume = () => {
-    const { campaign, isRunning } = this.state
+    const { campaign } = this.state
     if (!campaign) return
 
-    // If the campaign manager is actively running (just paused mid-execution), simply resume
-    if (isRunning) {
-      campaignManager.resume()
-      this.setState({ isPaused: false })
-      return
-    }
-
-    // Otherwise, re-start the campaign from where it left off (e.g. opened from list)
-    void this.restartCampaign(campaign)
+    // Tell background to resume; if no active run, restart the campaign
+    void sendToBg({ type: 'BG_RESUME_CAMPAIGN' }).then((ok) => {
+      if (!ok) {
+        // No active run in background — re-start from storage
+        void this.restartCampaign(campaign)
+      }
+    })
+    this.setState({ isPaused: false })
   }
 
   private async restartCampaign(campaign: Campaign) {
@@ -360,7 +352,7 @@ class SidePanel extends Component<unknown, SidePanelState> {
   }
 
   private handleStop = () => {
-    campaignManager.stop()
+    void sendToBg({ type: 'BG_STOP_CAMPAIGN' })
     this.setState({ isRunning: false, delayInfo: null })
   }
 
@@ -412,7 +404,17 @@ class SidePanel extends Component<unknown, SidePanelState> {
             />
           </div>
           <div className="px-2 shrink-0">
-            <LanguageSelector />
+            <button
+              type="button"
+              onClick={() => this.setState({ settingsOpen: true })}
+              className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title={t('settings')}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -542,7 +544,7 @@ class SidePanel extends Component<unknown, SidePanelState> {
                     }}
                     onDeleteCampaign={(id) => {
                       if (campaign?.id === id) {
-                        campaignManager.stop()
+                        void sendToBg({ type: 'BG_STOP_CAMPAIGN' })
                         this.setState({
                           campaign: null,
                           results: [],
@@ -574,6 +576,11 @@ class SidePanel extends Component<unknown, SidePanelState> {
             </>
           )}
         </div>
+
+        <GlobalSettingsModal
+          open={this.state.settingsOpen}
+          onClose={() => this.setState({ settingsOpen: false })}
+        />
       </div>
     )
   }
