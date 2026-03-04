@@ -46,6 +46,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
           name: 'Variante A',
           template:
             'Olá {decisor}! Vi que a {nome_fantasia} atua em {segmento} em {cidade}. Temos uma solução que reduz faltas de pacientes em até 70%. Posso te mostrar?',
+          templates: ['Olá {decisor}! Vi que a {nome_fantasia} atua em {segmento} em {cidade}. Temos uma solução que reduz faltas de pacientes em até 70%. Posso te mostrar?'],
           useAI: false,
         },
       ],
@@ -77,6 +78,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
           id: crypto.randomUUID(),
           name: `Variante ${letter}`,
           template: '',
+          templates: [''],
           useAI: false,
         },
       ],

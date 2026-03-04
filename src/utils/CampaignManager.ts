@@ -1,6 +1,6 @@
 import type { AIConfig } from '../types/AIConfig'
 import type { Campaign, CampaignResult, MessageVariant } from '../types/Campaign'
-import { DEFAULT_BATCH, DEFAULT_TIMING } from '../types/Campaign'
+import { DEFAULT_BATCH, DEFAULT_TIMING, normalizeVariant } from '../types/Campaign'
 import type { Lead } from '../types/Lead'
 import campaignStorage from './CampaignStorage'
 import { generateMessage } from './aiService'
@@ -86,14 +86,14 @@ class CampaignManager {
     const results: CampaignResult[] = []
 
     for (const lead of leads.slice(0, 5)) {
-      const variant = this.assignVariant(campaign.variants)
-      const message = await this.generateForLead(lead, variant)
+      const variant = normalizeVariant(this.assignVariant(campaign.variants))
+      const messages = await this.generateMessagesForLead(lead, variant)
       results.push({
         leadId: lead.id,
         variantId: variant.id,
         contact: formatPhone(lead.telefone),
         status: 'pending',
-        generatedMessage: message,
+        generatedMessage: messages.join('\n---\n'),
       })
     }
     return results
@@ -201,7 +201,9 @@ class CampaignManager {
           }
         }
 
-        await this.processLead(campaign, lead)
+        const isLastLead =
+          lead === pendingLeads[pendingLeads.length - 1]
+        await this.processLead(campaign, lead, isLastLead)
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated asynchronously
@@ -235,8 +237,8 @@ class CampaignManager {
     await this.emitStatus()
   }
 
-  private async processLead(campaign: Campaign, lead: Lead): Promise<void> {
-    const variant = this.assignVariant(campaign.variants)
+  private async processLead(campaign: Campaign, lead: Lead, isLastLead = false): Promise<void> {
+    const variant = normalizeVariant(this.assignVariant(campaign.variants))
     const result: CampaignResult = {
       leadId: lead.id,
       variantId: variant.id,
@@ -245,23 +247,35 @@ class CampaignManager {
     }
 
     try {
-      const message = await this.generateForLead(lead, variant)
-      result.generatedMessage = message
-      console.log('[WTF Campaign] Processing lead:', result.contact, '| variant:', variant.name)
+      const messages = await this.generateMessagesForLead(lead, variant)
+      result.generatedMessage = messages.join('\n---\n')
+      console.log('[WTF Campaign] Processing lead:', result.contact, '| variant:', variant.name, '| msgs:', messages.length)
 
       if (!this.sendFn) throw new Error('Send function not configured')
 
-      // Try primary phone
-      console.log('[WTF Campaign] Calling sendFn for:', result.contact)
-      let sent = await this.sendFn(result.contact, message)
+      let contact = result.contact
+      // Try primary phone with first message
+      console.log('[WTF Campaign] Calling sendFn for:', contact)
+      let sent = await this.sendFn(contact, messages[0] ?? '')
       console.log('[WTF Campaign] sendFn returned:', sent)
 
       // Fallback to telefone_2
       if (!sent && lead.telefone_2) {
         const alt = formatPhone(lead.telefone_2)
-        if (alt && alt !== result.contact) {
+        if (alt && alt !== contact) {
+          contact = alt
           result.contact = alt
-          sent = await this.sendFn(alt, message)
+          sent = await this.sendFn(alt, messages[0] ?? '')
+        }
+      }
+
+      // Send remaining messages sequentially
+      if (sent && messages.length > 1) {
+        for (let i = 1; i < messages.length; i++) {
+          // Small delay between messages (2-4s) to seem natural
+          const msgDelay = 2000 + Math.random() * 2000
+          await new Promise((resolve) => setTimeout(resolve, msgDelay))
+          await this.sendFn(contact, messages[i]!)
         }
       }
 
@@ -269,7 +283,7 @@ class CampaignManager {
         result.status = 'sent'
         result.sentAt = new Date().toISOString()
         campaign.dailySentCount++
-        addLog(3, 'Mensagem enviada', result.contact)
+        addLog(3, `${String(messages.length)} msg enviada(s)`, result.contact)
       } else {
         result.status = 'failed'
         result.error = 'Contact not found on WhatsApp'
@@ -291,12 +305,14 @@ class CampaignManager {
 
     await this.emitStatus()
 
-    // Delay
-    const delay = this.calculateDelay(campaign)
-    if (delay > 0) {
-      this.delayCallback?.({ totalMs: delay, startedAt: Date.now() })
-      await new Promise((resolve) => setTimeout(resolve, delay))
-      this.delayCallback?.(null)
+    // Delay (skip for the last lead — no next message to wait for)
+    if (!isLastLead) {
+      const delay = this.calculateDelay(campaign)
+      if (delay > 0) {
+        this.delayCallback?.({ totalMs: delay, startedAt: Date.now() })
+        await new Promise((resolve) => setTimeout(resolve, delay))
+        this.delayCallback?.(null)
+      }
     }
   }
 
@@ -306,6 +322,7 @@ class CampaignManager {
         id: 'default',
         name: 'Default',
         template: '',
+        templates: [''],
         useAI: false,
       }
     }
@@ -313,13 +330,19 @@ class CampaignManager {
     return variants[Math.floor(Math.random() * variants.length)]!
   }
 
-  private async generateForLead(lead: Lead, variant: MessageVariant): Promise<string> {
-    if (variant.useAI && this.aiConfig && this.aiConfig.provider !== 'none') {
-      const resp = await generateMessage(this.aiConfig, lead, variant.template)
-      if (resp.text) return resp.text
-      // Fallback to template if AI fails
+  private async generateMessagesForLead(lead: Lead, variant: MessageVariant): Promise<string[]> {
+    const templates = variant.templates.length > 0 ? variant.templates : [variant.template]
+    const messages: string[] = []
+    for (const tpl of templates) {
+      if (!tpl.trim()) continue
+      if (variant.useAI && this.aiConfig && this.aiConfig.provider !== 'none') {
+        const resp = await generateMessage(this.aiConfig, lead, tpl)
+        messages.push(resp.text || replaceVariables(tpl, lead))
+      } else {
+        messages.push(replaceVariables(tpl, lead))
+      }
     }
-    return replaceVariables(variant.template, lead)
+    return messages.length > 0 ? messages : [replaceVariables(variant.template, lead)]
   }
 
   private calculateDelay(campaign: Campaign): number {

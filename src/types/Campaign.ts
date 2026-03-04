@@ -3,10 +3,20 @@ import type { Attachment } from './Attachment'
 export interface MessageVariant {
   id: string
   name: string
+  /** @deprecated Use templates[] instead */
   template: string
+  templates: string[]
   useAI: boolean
   aiPrompt?: string
   attachment?: Attachment
+}
+
+/** Normalize legacy variants that only have `template` to use `templates[]` */
+export function normalizeVariant(v: MessageVariant): MessageVariant {
+  if (!v.templates || v.templates.length === 0) {
+    return { ...v, templates: v.template ? [v.template] : [''] }
+  }
+  return { ...v, template: v.templates[0] ?? '' }
 }
 
 export interface SendSchedule {

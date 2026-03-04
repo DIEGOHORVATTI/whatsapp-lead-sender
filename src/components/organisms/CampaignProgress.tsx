@@ -82,10 +82,38 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
 
     const maxSent = Math.max(...variantStats.map((v) => v.sent), 1)
 
+    const isFinished = !isRunning && !isPaused
+
     return (
       <div className="flex flex-col gap-3">
-        {/* Title */}
-        <h2 className="text-sm font-medium truncate">{campaign.name}</h2>
+        {/* Header with back button for non-running campaigns */}
+        <div className="flex items-center gap-2">
+          {!isRunning && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="text-xs text-primary hover:underline shrink-0"
+            >
+              ← Voltar
+            </button>
+          )}
+          <h2 className="text-sm font-medium truncate flex-1">{campaign.name}</h2>
+          {isFinished && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/15 text-primary">
+              Resumo
+            </span>
+          )}
+          {isRunning && !isPaused && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-success/15 text-success animate-pulse">
+              Em execução
+            </span>
+          )}
+          {isPaused && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-warning/15 text-warning">
+              Pausada
+            </span>
+          )}
+        </div>
 
         {/* Pause reason banner */}
         {isPaused && campaign.pauseReason && (
@@ -278,7 +306,7 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
               Parar
             </button>
           )}
-          {!isRunning && (
+          {!isRunning && !isPaused && (
             <button
               type="button"
               onClick={onBack}

@@ -9,7 +9,7 @@ import type {
   MessageVariant,
   TimingConfig,
 } from '../../types/Campaign'
-import { DEFAULT_BATCH, DEFAULT_TIMING } from '../../types/Campaign'
+import { DEFAULT_BATCH, DEFAULT_TIMING, normalizeVariant } from '../../types/Campaign'
 import type { Lead } from '../../types/Lead'
 import campaignManager from '../../utils/CampaignManager'
 import campaignStorage from '../../utils/CampaignStorage'
@@ -26,6 +26,8 @@ import VariableToolbar from '../molecules/VariableToolbar'
 interface UnifiedEditorProps {
   className?: string
   onCampaignStart?: (campaign: Campaign, leads: Lead[]) => void
+  onCampaignSave?: () => void
+  initialCampaign?: Campaign | null
 }
 
 interface UnifiedEditorState {
@@ -64,21 +66,25 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
 
   constructor(props: UnifiedEditorProps) {
     super(props)
+    const ic = props.initialCampaign
+    const defaultTemplates = [
+      'Olá {decisor}! Vi que a {nome_fantasia} atua em {segmento} em {cidade}. Temos uma solução que reduz faltas de pacientes em até 70%. Posso te mostrar?',
+    ]
     this.state = {
-      name: `Campanha ${new Date().toLocaleDateString('pt-BR')}`,
+      name: ic?.name ?? `Campanha ${new Date().toLocaleDateString('pt-BR')}`,
       leads: [],
-      variants: [
+      variants: ic?.variants.map(normalizeVariant) ?? [
         {
           id: crypto.randomUUID(),
           name: 'Variante A',
-          template:
-            'Olá {decisor}! Vi que a {nome_fantasia} atua em {segmento} em {cidade}. Temos uma solução que reduz faltas de pacientes em até 70%. Posso te mostrar?',
+          template: defaultTemplates[0]!,
+          templates: defaultTemplates,
           useAI: false,
         },
       ],
       activeVariantIndex: 0,
-      timing: { ...DEFAULT_TIMING },
-      batch: { ...DEFAULT_BATCH },
+      timing: ic?.timing ?? { ...DEFAULT_TIMING },
+      batch: ic?.batch ?? { ...DEFAULT_BATCH },
       aiConfig: { ...DEFAULT_AI_CONFIG },
       attachment: undefined,
       previewLeadIndex: 0,
@@ -95,43 +101,65 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
   }
 
   override componentDidMount() {
-    chrome.storage.local.get(
-      ['aiConfig', 'editorTiming', 'editorBatch', 'editorName', 'editorVariants'],
-      (data: Record<string, unknown>) => {
-        const updates: Partial<UnifiedEditorState> = {}
+    const ic = this.props.initialCampaign
+    if (ic) {
+      // Load leads from storage for the editing campaign
+      void this.loadCampaignLeads(ic.leadIds)
+      // Still load AI config from storage
+      chrome.storage.local.get(['aiConfig'], (data: Record<string, unknown>) => {
         if (data['aiConfig']) {
           // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-          updates.aiConfig = data['aiConfig'] as AIConfig
-        }
-        if (data['editorTiming']) {
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-          updates.timing = data['editorTiming'] as TimingConfig
-        }
-        if (data['editorBatch']) {
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-          updates.batch = data['editorBatch'] as BatchConfig
-        }
-        if (data['editorName']) {
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-          updates.name = data['editorName'] as string
-        }
-        if (data['editorVariants']) {
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-          updates.variants = data['editorVariants'] as MessageVariant[]
-        }
-        if (Object.keys(updates).length > 0) {
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-          this.setState(updates as UnifiedEditorState, () => {
+          this.setState({ aiConfig: data['aiConfig'] as AIConfig }, () => {
             this.checkSchedule()
           })
         } else {
           this.checkSchedule()
         }
-      }
-    )
+      })
+    } else {
+      chrome.storage.local.get(
+        ['aiConfig', 'editorTiming', 'editorBatch', 'editorName', 'editorVariants'],
+        (data: Record<string, unknown>) => {
+          const updates: Partial<UnifiedEditorState> = {}
+          if (data['aiConfig']) {
+            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+            updates.aiConfig = data['aiConfig'] as AIConfig
+          }
+          if (data['editorTiming']) {
+            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+            updates.timing = data['editorTiming'] as TimingConfig
+          }
+          if (data['editorBatch']) {
+            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+            updates.batch = data['editorBatch'] as BatchConfig
+          }
+          if (data['editorName']) {
+            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+            updates.name = data['editorName'] as string
+          }
+          if (data['editorVariants']) {
+            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+            updates.variants = data['editorVariants'] as MessageVariant[]
+          }
+          if (Object.keys(updates).length > 0) {
+            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+            this.setState(updates as UnifiedEditorState, () => {
+              this.checkSchedule()
+            })
+          } else {
+            this.checkSchedule()
+          }
+        }
+      )
+    }
     this.scheduleCheckInterval = setInterval(() => {
       this.checkSchedule()
     }, 60_000)
+  }
+
+  private async loadCampaignLeads(leadIds: string[]) {
+    const leads = await campaignStorage.getLeads(leadIds)
+    this.setState({ leads })
   }
 
   override componentWillUnmount() {
@@ -181,12 +209,13 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
     const { variants } = this.state
     if (variants.length >= 4) return
     const letter = String.fromCharCode(65 + variants.length)
-    const newVariants = [
+    const newVariants: MessageVariant[] = [
       ...variants,
       {
         id: crypto.randomUUID(),
         name: `Variante ${letter}`,
         template: '',
+        templates: [''],
         useAI: false,
       },
     ]
@@ -216,16 +245,27 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
     const { activeVariantIndex, variants } = this.state
     const variant = variants[activeVariantIndex]
     if (!variant) return
-    const ref = this.textareaRefs[variant.id]
-    const el = ref?.current
-    if (!el) return
-    const start = el.selectionStart
-    const end = el.selectionEnd
-    const newText = variant.template.slice(0, start) + variable + variant.template.slice(end)
-    this.updateVariant(activeVariantIndex, { template: newText })
+    // Find which textarea is focused (by checking activeElement)
+    const active = document.activeElement as HTMLTextAreaElement | null
+    if (!active || active.tagName !== 'TEXTAREA') return
+    const start = active.selectionStart
+    const end = active.selectionEnd
+    const currentText = active.value
+    const newText = currentText.slice(0, start) + variable + currentText.slice(end)
+
+    // Find which template index this textarea belongs to
+    const templates = [...(variant.templates.length > 0 ? variant.templates : [variant.template])]
+    const tplIndex = templates.findIndex((_, i) => {
+      const ref = this.textareaRefs[`${variant.id}-${String(i)}`]
+      return ref?.current === active
+    })
+    if (tplIndex >= 0) {
+      templates[tplIndex] = newText
+      this.updateVariant(activeVariantIndex, { templates, template: templates[0] ?? '' })
+    }
     requestAnimationFrame(() => {
-      el.focus()
-      el.setSelectionRange(start + variable.length, start + variable.length)
+      active.focus()
+      active.setSelectionRange(start + variable.length, start + variable.length)
     })
   }
 
@@ -238,14 +278,15 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
 
   // --- Preview ---
 
-  private getPreviewMessage(): string {
+  private getPreviewMessages(): string[] {
     const { variants, activeVariantIndex, leads, previewLeadIndex } = this.state
     const variant = variants[activeVariantIndex]
-    if (!variant) return ''
-    if (leads.length === 0) return variant.template
+    if (!variant) return ['']
+    const templates = variant.templates.length > 0 ? variant.templates : [variant.template]
+    if (leads.length === 0) return templates
     const lead = leads[previewLeadIndex]
-    if (!lead) return variant.template
-    return replaceVariables(variant.template, lead)
+    if (!lead) return templates
+    return templates.filter((t) => t.trim()).map((t) => replaceVariables(t, lead))
   }
 
   private generateAIPreview = async () => {
@@ -255,7 +296,8 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
     if (!variant || !lead || aiConfig.provider === 'none') return
 
     this.setState({ aiPreviewLoading: true })
-    const resp = await generateMessage(aiConfig, lead, variant.template)
+    const tpl = variant.templates.length > 0 ? variant.templates.join('\n') : variant.template
+    const resp = await generateMessage(aiConfig, lead, tpl)
     this.setState({
       aiPreviewMessage: resp.text ? resp.text : (resp.error ?? 'Erro ao gerar'),
       aiPreviewLoading: false,
@@ -295,6 +337,27 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
     }
   }
 
+  private handleSave = async () => {
+    const { name, variants, timing, batch, leads } = this.state
+    const ic = this.props.initialCampaign
+    const campaign: Campaign = {
+      id: ic?.id ?? crypto.randomUUID(),
+      name,
+      leadIds: leads.map((l) => l.id),
+      variants,
+      timing,
+      batch,
+      results: ic?.results ?? [],
+      status: ic?.status === 'completed' ? 'draft' : (ic?.status ?? 'draft'),
+      pauseReason: ic?.pauseReason,
+      dailySentCount: ic?.dailySentCount ?? 0,
+      dailyResetDate: ic?.dailyResetDate ?? new Date().toISOString().slice(0, 10),
+      createdAt: ic?.createdAt ?? new Date().toISOString(),
+    }
+    await campaignStorage.saveCampaign(campaign)
+    this.props.onCampaignSave?.()
+  }
+
   // --- AI Config persistence ---
 
   private handleAIConfigChange = (config: AIConfig) => {
@@ -323,8 +386,8 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
 
     const activeVariant = variants[activeVariantIndex]
     const previewLead = leads[previewLeadIndex]
-    const previewMessage =
-      activeVariant?.useAI && aiPreviewMessage ? aiPreviewMessage : this.getPreviewMessage()
+    const previewMessages =
+      activeVariant?.useAI && aiPreviewMessage ? [aiPreviewMessage] : this.getPreviewMessages()
 
     // Full preview mode
     if (showFullPreview) {
@@ -566,32 +629,84 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
 
             <VariableToolbar onInsert={this.insertVariable} />
 
-            <textarea
-              ref={this.getTextareaRef(activeVariant.id)}
-              value={activeVariant.template}
-              onChange={(e) => {
-                this.updateVariant(activeVariantIndex, {
-                  template: e.target.value,
-                })
+            {(activeVariant.templates.length > 0 ? activeVariant.templates : [activeVariant.template]).map((tpl, tplIdx, arr) => (
+              <div key={tplIdx} className="relative mt-2">
+                <div className="flex items-center gap-1 mb-1">
+                  <span className="text-[10px] text-muted-foreground font-medium">
+                    Msg {tplIdx + 1}
+                  </span>
+                  {arr.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const templates = activeVariant.templates.filter((_, i) => i !== tplIdx)
+                        this.updateVariant(activeVariantIndex, {
+                          templates,
+                          template: templates[0] ?? '',
+                        })
+                      }}
+                      className="text-[10px] text-destructive hover:opacity-80 ml-auto"
+                      title="Remover mensagem"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  ref={this.getTextareaRef(`${activeVariant.id}-${String(tplIdx)}`)}
+                  value={tpl}
+                  onChange={(e) => {
+                    const templates = [...(activeVariant.templates.length > 0 ? activeVariant.templates : [activeVariant.template])]
+                    templates[tplIdx] = e.target.value
+                    this.updateVariant(activeVariantIndex, {
+                      templates,
+                      template: templates[0] ?? '',
+                    })
+                  }}
+                  rows={3}
+                  className="w-full bg-muted text-foreground border border-input p-2 rounded-lg text-sm focus:shadow-equal focus:shadow-ring focus:outline-none transition-shadow placeholder:text-muted-foreground"
+                  placeholder={
+                    activeVariant.useAI
+                      ? `Msg ${tplIdx + 1}: Instruções para a IA...`
+                      : `Msg ${tplIdx + 1}: Template com {variáveis}...`
+                  }
+                />
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                const templates = [...(activeVariant.templates.length > 0 ? activeVariant.templates : [activeVariant.template]), '']
+                this.updateVariant(activeVariantIndex, { templates })
               }}
-              rows={5}
-              className="w-full mt-2 bg-muted text-foreground border border-input p-2 rounded-lg text-sm focus:shadow-equal focus:shadow-ring focus:outline-none transition-shadow placeholder:text-muted-foreground"
-              placeholder={
-                activeVariant.useAI
-                  ? 'Instruções para a IA (pode usar {variáveis})...'
-                  : 'Template da mensagem com {variáveis}...'
-              }
-            />
+              className="mt-1 text-[11px] text-primary hover:underline"
+            >
+              + Adicionar mensagem
+            </button>
 
             {activeVariant.useAI && (
-              <Button
-                variant="info"
-                onClick={() => void this.generateAIPreview()}
-                disabled={aiPreviewLoading || leads.length === 0 || aiConfig.provider === 'none'}
-                className="mt-2 text-xs"
+              <div
+                style={{ cursor: 'default' }}
+                title={
+                  aiConfig.provider === 'none'
+                    ? 'Configure um provider de IA em Configurações > IA'
+                    : !aiConfig.apiKey
+                      ? 'Adicione uma API Key em Configurações > IA'
+                      : leads.length === 0
+                        ? 'Adicione contatos primeiro'
+                        : undefined
+                }
               >
-                {aiPreviewLoading ? 'Gerando...' : 'Gerar com IA'}
-              </Button>
+                <Button
+                  variant="info"
+                  onClick={() => void this.generateAIPreview()}
+                  disabled={aiPreviewLoading || leads.length === 0 || aiConfig.provider === 'none'}
+                  style={aiPreviewLoading || leads.length === 0 || aiConfig.provider === 'none' ? { pointerEvents: 'none' } : undefined}
+                  className="mt-2 text-xs"
+                >
+                  {aiPreviewLoading ? 'Gerando...' : 'Gerar com IA'}
+                </Button>
+              </div>
             )}
           </div>
         )}
@@ -610,7 +725,9 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                 "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4cfc6' fill-opacity='0.3'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
             }}
           >
-            <PreviewBubble message={previewMessage} attachmentName={attachment?.name} />
+            {previewMessages.map((msg, i) => (
+              <PreviewBubble key={i} message={msg} attachmentName={i === 0 ? attachment?.name : undefined} />
+            ))}
           </div>
 
           {/* Lead Navigator */}
@@ -698,7 +815,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
               onClick={this.handleStart}
               disabled={
                 leads.length === 0 ||
-                variants.every((v) => !v.template.trim()) ||
+                variants.every((v) => v.templates.every((t) => !t.trim())) ||
                 this.state.outsideSchedule
               }
               className="text-xs w-full"
@@ -707,10 +824,18 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
             </Button>
           </span>
           <Button
+            variant="success"
+            onClick={() => void this.handleSave()}
+            disabled={variants.every((v) => v.templates.every((t) => !t.trim()))}
+            className="text-xs"
+          >
+            Salvar
+          </Button>
+          <Button
             variant="secondary"
             onClick={() => void this.handleFullPreview()}
             disabled={
-              leads.length === 0 || variants.every((v) => !v.template.trim()) || fullPreviewLoading
+              leads.length === 0 || variants.every((v) => v.templates.every((t) => !t.trim())) || fullPreviewLoading
             }
             className="text-xs"
           >

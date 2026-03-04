@@ -6,6 +6,8 @@ import Button from '../atoms/Button'
 interface CampaignListProps {
   onNewCampaign: () => void
   onSelectCampaign: (campaign: Campaign) => void
+  onEditCampaign: (campaign: Campaign) => void
+  onDeleteCampaign?: (id: string) => void
 }
 
 interface CampaignListState {
@@ -17,15 +19,15 @@ const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   draft: { label: 'Rascunho', className: 'bg-muted text-muted-foreground' },
   running: {
     label: 'Em execução',
-    className: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+    className: 'bg-success/15 text-success',
   },
   paused: {
     label: 'Pausada',
-    className: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+    className: 'bg-warning/15 text-warning',
   },
   completed: {
     label: 'Concluída',
-    className: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    className: 'bg-primary/15 text-primary',
   },
   preview: { label: 'Preview', className: 'bg-muted text-muted-foreground' },
 }
@@ -43,6 +45,16 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
   private async load() {
     this.setState({ loading: true })
     const campaigns = await campaignStorage.listCampaigns()
+
+    // Auto-reset stuck "running" campaigns silently
+    for (const c of campaigns) {
+      if (c.status === 'running') {
+        c.status = 'paused'
+        c.pauseReason = undefined
+        await campaignStorage.saveCampaign(c)
+      }
+    }
+
     // Sort by creation date, newest first
     campaigns.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     this.setState({ campaigns, loading: false })
@@ -51,7 +63,30 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
   private handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
     await campaignStorage.deleteCampaign(id)
+    this.props.onDeleteCampaign?.(id)
     await this.load()
+  }
+
+  private handleCopy = async (e: React.MouseEvent, campaign: Campaign) => {
+    e.stopPropagation()
+    const copy: Campaign = {
+      ...campaign,
+      id: crypto.randomUUID(),
+      name: `${campaign.name} (cópia)`,
+      status: 'draft',
+      results: [],
+      pauseReason: undefined,
+      dailySentCount: 0,
+      dailyResetDate: new Date().toISOString().slice(0, 10),
+      createdAt: new Date().toISOString(),
+    }
+    await campaignStorage.saveCampaign(copy)
+    await this.load()
+  }
+
+  private handleEdit = (e: React.MouseEvent, campaign: Campaign) => {
+    e.stopPropagation()
+    this.props.onEditCampaign(campaign)
   }
 
   override render() {
@@ -103,6 +138,22 @@ export default class CampaignList extends Component<CampaignListProps, CampaignL
                     >
                       {statusInfo.label}
                     </span>
+                    <button
+                      type="button"
+                      onClick={(e) => this.handleEdit(e, c)}
+                      className="text-xs text-primary hover:opacity-80"
+                      title="Editar campanha"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => void this.handleCopy(e, c)}
+                      className="text-xs text-primary hover:opacity-80"
+                      title="Copiar campanha"
+                    >
+                      ⧉
+                    </button>
                     <button
                       type="button"
                       onClick={(e) => void this.handleDelete(e, c.id)}
