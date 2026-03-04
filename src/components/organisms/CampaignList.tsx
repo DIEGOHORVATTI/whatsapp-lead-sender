@@ -19,9 +19,9 @@ interface CampaignListState {
 function getStatusLabels(): Record<string, { label: string; className: string }> {
   return {
     draft: { label: t('status_draft'), className: 'bg-muted text-muted-foreground' },
-    running: { label: t('status_running'), className: 'bg-success/15 text-success' },
-    paused: { label: t('status_paused'), className: 'bg-warning/15 text-warning' },
-    completed: { label: t('status_completed'), className: 'bg-primary/15 text-primary' },
+    running: { label: t('status_running'), className: 'bg-success/80 text-white' },
+    paused: { label: t('status_paused'), className: 'bg-warning/80 text-white' },
+    completed: { label: t('status_completed'), className: 'bg-primary/80 text-white' },
     preview: { label: t('status_preview'), className: 'bg-muted text-muted-foreground' },
   }
 }

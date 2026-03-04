@@ -100,17 +100,17 @@ export default class CampaignProgress extends Component<CampaignProgressProps> {
           )}
           <h2 className="text-sm font-medium truncate flex-1">{campaign.name}</h2>
           {isFinished && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/15 text-primary">
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/80 text-white">
               {t('summary')}
             </span>
           )}
           {isRunning && !isPaused && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-success/15 text-success animate-pulse">
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-success/80 text-white animate-pulse">
               {t('status_running')}
             </span>
           )}
           {isPaused && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-warning/15 text-warning">
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-warning/80 text-white">
               {t('status_paused')}
             </span>
           )}

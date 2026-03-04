@@ -188,7 +188,7 @@ export default class ContactPickerModal extends Component<
                       return (
                         <span
                           key={field}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] bg-primary/10 text-primary rounded-full"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] bg-primary/80 text-white rounded-full"
                         >
                           {label}: {filters[field]}
                           <button
