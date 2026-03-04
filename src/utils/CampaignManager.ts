@@ -281,7 +281,8 @@ class CampaignManager {
           // Small delay between messages (2-4s) to seem natural
           const msgDelay = 2000 + Math.random() * 2000
           await new Promise((resolve) => setTimeout(resolve, msgDelay))
-          await this.sendFn(contact, messages[i]!)
+          const msg = messages[i]
+          if (msg) await this.sendFn(contact, msg)
         }
       }
 

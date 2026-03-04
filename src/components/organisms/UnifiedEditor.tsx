@@ -79,7 +79,7 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
         {
           id: crypto.randomUUID(),
           name: t('variant_a'),
-          template: defaultTemplates[0]!,
+          template: defaultTemplates[0] ?? '',
           templates: defaultTemplates,
           useAI: false,
         },
@@ -260,8 +260,9 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
     const variant = variants[activeVariantIndex]
     if (!variant) return
     // Find which textarea is focused (by checking activeElement)
-    const active = document.activeElement as HTMLTextAreaElement | null
-    if (!active || active.tagName !== 'TEXTAREA') return
+    const active =
+      document.activeElement instanceof HTMLTextAreaElement ? document.activeElement : null
+    if (!active) return
     const start = active.selectionStart
     const end = active.selectionEnd
     const currentText = active.value
@@ -699,8 +700,8 @@ export default class UnifiedEditor extends Component<UnifiedEditorProps, Unified
                   className="w-full bg-muted text-foreground border border-input p-2 rounded-lg text-sm focus:shadow-equal focus:shadow-ring focus:outline-none transition-shadow placeholder:text-muted-foreground"
                   placeholder={
                     activeVariant.useAI
-                      ? `${t('msg_label')} ${tplIdx + 1}: ${t('ai_instructions_placeholder')}`
-                      : `${t('msg_label')} ${tplIdx + 1}: ${t('template_placeholder')}`
+                      ? `${t('msg_label')} ${String(tplIdx + 1)}: ${t('ai_instructions_placeholder')}`
+                      : `${t('msg_label')} ${String(tplIdx + 1)}: ${t('template_placeholder')}`
                   }
                 />
               </div>

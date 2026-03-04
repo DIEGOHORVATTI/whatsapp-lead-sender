@@ -175,13 +175,6 @@ export default class ContactPickerModal extends Component<
       <div className="flex flex-col h-full">
         {/* Header with back button */}
         <div className="flex items-center gap-2 p-3 border-b border-border bg-card">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-2 py-1 text-xs font-medium text-primary bg-primary/8 hover:bg-primary/16 rounded-lg transition-colors"
-          >
-            {t('back_to_list')}
-          </button>
           <h3 className="text-sm font-semibold flex-1">{t('select_saved_contacts')}</h3>
           <span className="text-[10px] text-muted-foreground">
             {applicableCount} {t('of')} {filtered.length} {t('selected')}
@@ -280,7 +273,7 @@ export default class ContactPickerModal extends Component<
                           type="button"
                           onClick={() => {
                             const next = { ...filters, [field]: vals.filter((x) => x !== v) }
-                            if (next[field]!.length === 0) {
+                            if (next[field] && next[field].length === 0) {
                               // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
                               delete next[field]
                             }
@@ -380,7 +373,7 @@ export default class ContactPickerModal extends Component<
               disabled={applicableCount === 0}
               className="text-xs"
             >
-              {`${t('select')} ${applicableCount} ${t('contacts')}`}
+              {`${t('select')} ${String(applicableCount)} ${t('contacts')}`}
             </Button>
           </div>
         </div>

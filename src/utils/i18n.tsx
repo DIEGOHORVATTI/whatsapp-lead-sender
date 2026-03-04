@@ -75,6 +75,7 @@ export function getAvailableLocales(): { code: string; label: string }[] {
  * Replaces {{variable}} patterns in the translated string.
  */
 export function t(key: string, params?: Record<string, string | number>): string {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const base = currentTranslations[key] ?? (ptBR as Translations)[key] ?? key
   if (!params) return base
   return base.replace(/\{\{(\w+)\}\}/g, (_, k: string) => String(params[k] ?? `{{${k}}}`))
@@ -118,8 +119,9 @@ export class I18nProvider extends Component<{ children: ReactNode }, I18nProvide
     } catch {
       // detect browser language if chrome storage not available
       const browserLang = navigator.language
-      if (browserLang && browserLang !== 'pt-BR' && localeModules[browserLang.split('-')[0]!]) {
-        void setLocale(browserLang.split('-')[0]!)
+      const langCode = browserLang.split('-')[0]
+      if (browserLang && browserLang !== 'pt-BR' && langCode && localeModules[langCode]) {
+        void setLocale(langCode)
       }
     }
 

@@ -96,7 +96,7 @@ export default class ConfigPanel extends Component<ConfigPanelProps, ConfigPanel
                   ['timing', t('timing')],
                   ['batch', t('batches')],
                   ['attachment', t('attachment')],
-                ] as [ConfigPanelState['activeSection'], string][]
+                ] satisfies [ConfigPanelState['activeSection'], string][]
               ).map(([key, label]) => (
                 <button
                   key={key}

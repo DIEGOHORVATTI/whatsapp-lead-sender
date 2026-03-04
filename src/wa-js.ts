@@ -172,6 +172,7 @@ if (window.__WTF_INJECTED__) {
       const value = await withTimeout(result.sendMsgResult, 10_000, 'sendMsgResult')
       dbg('sendMsgResult:', value)
       const valueRecord =
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : undefined
       const resultStr: string | undefined =
         typeof value === 'string'
@@ -269,7 +270,11 @@ if (window.__WTF_INJECTED__) {
       window.WPP.webpack.onReady(() => {
         clearTimeout(timeout)
         dbg('onReady disparou! Processando mensagem...')
-        void addToQueue(message).then(resolve).catch(reject)
+        void addToQueue(message)
+          .then(resolve)
+          .catch((err: unknown) => {
+            reject(err instanceof Error ? err : new Error(String(err)))
+          })
       })
     })
   })
@@ -310,6 +315,7 @@ if (window.__WTF_INJECTED__) {
         if (
           !msgId ||
           typeof msgId !== 'object' ||
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
           (msgId as Record<string, unknown>)['fromMe'] ||
           msg['isSentByMe'] ||
           msg['type'] !== 'chat' ||

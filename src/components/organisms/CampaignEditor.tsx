@@ -174,7 +174,7 @@ export default class CampaignEditor extends Component<CampaignEditorProps, Campa
                 ['ai', t('ai')],
                 ['timing', t('timing')],
                 ['batch', t('batches')],
-              ] as [CampaignEditorState['activeTab'], string][]
+              ] satisfies [CampaignEditorState['activeTab'], string][]
             ).map(([key, label]) => (
               <button
                 key={key}

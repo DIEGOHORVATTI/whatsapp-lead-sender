@@ -33,7 +33,11 @@ export default class SelectMultiAutoComplete extends Component<
   }
 
   private handleClickOutside = (e: MouseEvent) => {
-    if (this.containerRef.current && !this.containerRef.current.contains(e.target as Node)) {
+    if (
+      this.containerRef.current &&
+      e.target instanceof Node &&
+      !this.containerRef.current.contains(e.target)
+    ) {
       this.setState({ open: false, search: '' })
     }
   }

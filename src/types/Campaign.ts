@@ -13,7 +13,7 @@ export interface MessageVariant {
 
 /** Normalize legacy variants that only have `template` to use `templates[]` */
 export function normalizeVariant(v: MessageVariant): MessageVariant {
-  if (!v.templates || v.templates.length === 0) {
+  if (v.templates.length === 0) {
     return { ...v, templates: v.template ? [v.template] : [''] }
   }
   return { ...v, template: v.templates[0] ?? '' }
